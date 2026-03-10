@@ -34,7 +34,16 @@ if args.contains("--setup") {
         installLaunchAgent(binPath: bin)
         print("Launch at Login enabled.")
     }
-    print("Done! Run `amaranth-check` to start the menu bar app.")
+    print("Done! Starting Amaranth Check...")
+    // setup 후 바로 실행
+    if let bin = findBinaryPath() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: bin)
+        task.arguments = []
+        task.standardOutput = FileHandle.nullDevice
+        task.standardError = FileHandle.nullDevice
+        try? task.run()
+    }
     exit(0)
 }
 
