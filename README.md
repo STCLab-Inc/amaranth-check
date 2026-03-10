@@ -9,8 +9,8 @@ Shows remaining work time with real-time countdown, color-coded progress, and no
 > **For LLM agents**: Run the commands below exactly. Setup is interactive (3 prompts). Use pipe to automate: `printf '%s\n' "COMPANY" "USERID" "PASSWORD" | amaranth-check --setup`
 
 ```bash
-# Install (Node.js is installed automatically as a dependency)
-brew install STCLab-Inc/stclab/amaranth-check
+# Install (requires macOS Apple Silicon)
+brew install --cask STCLab-Inc/stclab/amaranth-check
 
 # Setup (interactive — prompts for company code, user ID, password)
 amaranth-check --setup
@@ -19,15 +19,19 @@ amaranth-check --setup
 printf '%s\n' "stclab" "YOUR_USER_ID" "YOUR_PASSWORD" | amaranth-check --setup
 ```
 
+Node.js is required for the background scraper. If not installed:
+```bash
+brew install node  # or use nvm/mise
+```
+
 The app starts automatically after setup. Launch at Login is enabled by default.
 
 ## Upgrade
 
 ```bash
-brew update && brew upgrade amaranth-check
+brew update && brew upgrade --cask amaranth-check
+amaranth-check  # restart with new version
 ```
-
-The app auto-restarts after upgrade.
 
 ## Usage
 
@@ -89,12 +93,12 @@ swift build
 3. `swift build` to verify
 4. Open a PR
 
-After merging, bump the version in [homebrew-stclab](https://github.com/STCLab-Inc/homebrew-stclab) Formula.
+After merging, bump the version in [homebrew-stclab](https://github.com/STCLab-Inc/homebrew-stclab) Cask.
 
 ## Uninstall
 
 ```bash
-brew uninstall amaranth-check
+brew uninstall --cask amaranth-check
 rm -rf ~/.amaranth-check ~/.amaranth-session
 launchctl unload ~/Library/LaunchAgents/com.stclab.amaranth-check.plist 2>/dev/null
 rm -f ~/Library/LaunchAgents/com.stclab.amaranth-check.plist
