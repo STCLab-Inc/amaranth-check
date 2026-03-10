@@ -29,6 +29,11 @@ if args.contains("--setup") {
     print("Config saved to \(AppPaths.configFile)")
     print("Installing Playwright (this may take a minute)...")
     ensureScraperInstalled()
+    // Launch at Login 기본 활성화
+    if config.launchAtLogin, let bin = findBinaryPath() {
+        installLaunchAgent(binPath: bin)
+        print("Launch at Login enabled.")
+    }
     print("Done! Run `amaranth-check` to start the menu bar app.")
     exit(0)
 }

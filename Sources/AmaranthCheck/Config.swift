@@ -33,7 +33,7 @@ struct AppConfig: Codable {
         colorDone: "#34C759",
         timeFormat: "hm",
         notifyOnDone: true,
-        launchAtLogin: false
+        launchAtLogin: true
     )
 }
 
