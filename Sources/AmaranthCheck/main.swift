@@ -67,7 +67,8 @@ if args.contains("--status") {
         exit(0)
     }
     let config = loadConfig()
-    let leaveMin = comeMin + 540
+    let effectiveStart = max(comeMin, 480)
+    let leaveMin = effectiveStart + 540
     let leaveEst = formatMinutes(leaveMin)
     if let leave = cache.leave, !leave.isEmpty {
         print("In: \(come)  Out: \(leave)  \(config.emojiDone) \(config.labelDone)")

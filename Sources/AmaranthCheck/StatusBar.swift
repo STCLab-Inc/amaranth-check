@@ -42,7 +42,8 @@ class StatusBarController: NSObject {
         }
 
         statusItem.button?.image = nil
-        let leaveMin = comeMin + 540
+        let effectiveStart = max(comeMin, 480)
+        let leaveMin = effectiveStart + 540
         let leaveEst = formatMinutes(leaveMin)
 
         if let leave = cache.leave, !leave.isEmpty {
@@ -55,7 +56,7 @@ class StatusBarController: NSObject {
         let cal = Calendar.current
         let nowMin = cal.component(.hour, from: Date()) * 60 + cal.component(.minute, from: Date())
         let remain = leaveMin - nowMin
-        let elapsed = nowMin - comeMin
+        let elapsed = nowMin - effectiveStart
         let pct = min(100, max(0, elapsed * 100 / 540))
 
         if remain <= 0 {
