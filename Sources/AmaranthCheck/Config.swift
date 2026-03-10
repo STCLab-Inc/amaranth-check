@@ -1,0 +1,111 @@
+import Foundation
+
+struct AppConfig: Codable {
+    var company: String
+    var userId: String
+    var password: String
+    // UI 커스텀
+    var labelLeft: String
+    var labelDone: String
+    var labelNoData: String
+    var emojiDone: String
+    var showProgressBar: Bool
+    var colorEarly: String  // hex
+    var colorMid: String
+    var colorLate: String
+    var colorDone: String
+    var notifyOnDone: Bool
+    var launchAtLogin: Bool
+
+    static let `default` = AppConfig(
+        company: "stclab",
+        userId: "",
+        password: "",
+        labelLeft: "left",
+        labelDone: "Done",
+        labelNoData: "--:--",
+        emojiDone: "🎉",
+        showProgressBar: true,
+        colorEarly: "#34C759",
+        colorMid: "#FF9500",
+        colorLate: "#FF3B30",
+        colorDone: "#34C759",
+        notifyOnDone: true,
+        launchAtLogin: false
+    )
+}
+
+struct AttendanceCache: Codable {
+    let date: String
+    let come: String?
+    let leave: String?
+}
+
+// MARK: - Paths
+
+enum AppPaths {
+    static let configDir = NSHomeDirectory() + "/.amaranth-check"
+    static let configFile = configDir + "/config.json"
+    static let cacheFile = configDir + "/cache.json"
+    static let packageJson = configDir + "/package.json"
+    static let checkScript = configDir + "/check.mjs"
+    static let sessionDir = NSHomeDirectory() + "/.amaranth-session"
+    static let launchAgentPath = NSHomeDirectory() + "/Library/LaunchAgents/com.stclab.amaranth-check.plist"
+}
+
+// MARK: - Config IO
+
+func loadConfig() -> AppConfig {
+    guard let data = FileManager.default.contents(atPath: AppPaths.configFile),
+          let config = try? JSONDecoder().decode(AppConfig.self, from: data) else {
+        return .default
+    }
+    return config
+}
+
+func saveConfig(_ config: AppConfig) {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    guard let data = try? encoder.encode(config) else { return }
+    FileManager.default.createFile(atPath: AppPaths.configFile, contents: data)
+}
+
+// MARK: - Cache IO
+
+func loadCache() -> AttendanceCache? {
+    guard let data = FileManager.default.contents(atPath: AppPaths.cacheFile),
+          let cache = try? JSONDecoder().decode(AttendanceCache.self, from: data) else {
+        return nil
+    }
+    let today = formatDate(Date())
+    guard cache.date == today else { return nil }
+    return cache
+}
+
+func formatDate(_ date: Date) -> String {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd"
+    return f.string(from: date)
+}
+
+func parseTime(_ s: String) -> Int? {
+    let parts = s.split(separator: ":").compactMap { Int($0) }
+    guard parts.count == 2 else { return nil }
+    return parts[0] * 60 + parts[1]
+}
+
+func formatMinutes(_ m: Int) -> String {
+    String(format: "%02d:%02d", m / 60, m % 60)
+}
+
+func hexColor(_ hex: String) -> (r: Double, g: Double, b: Double) {
+    let h = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+    guard h.count == 6, let val = UInt64(h, radix: 16) else {
+        return (0, 0, 0)
+    }
+    return (
+        Double((val >> 16) & 0xFF) / 255.0,
+        Double((val >> 8) & 0xFF) / 255.0,
+        Double(val & 0xFF) / 255.0
+    )
+}
