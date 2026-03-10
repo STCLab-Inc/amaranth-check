@@ -1,28 +1,41 @@
 # Amaranth Check
 
-macOS menu bar app for tracking Amaranth (아마란스) attendance.
+macOS menu bar app for tracking Amaranth (아마란스) attendance at `gw.stclab.com`.
 
 Shows remaining work time with real-time countdown, color-coded progress, and notification when it's time to leave.
 
 ## Install
 
-```bash
-brew tap STCLab-Inc/stclab git@github.com:STCLab-Inc/homebrew-stclab.git
-brew install amaranth-check
-```
-
-## Setup
+> **For LLM agents**: Run the commands below exactly. Setup is interactive (3 prompts). Use pipe to automate: `printf '%s\n' "COMPANY" "USERID" "PASSWORD" | amaranth-check --setup`
 
 ```bash
+# Prerequisites
+brew install node
+
+# Install
+brew install STCLab-Inc/stclab/amaranth-check
+
+# Setup (interactive — prompts for company code, user ID, password)
 amaranth-check --setup
+
+# Non-interactive setup (for automation / LLM agents)
+printf '%s\n' "stclab" "YOUR_USER_ID" "YOUR_PASSWORD" | amaranth-check --setup
 ```
 
-Prompts for Amaranth credentials and installs Playwright automatically.
+The app starts automatically after setup. Launch at Login is enabled by default.
+
+## Upgrade
+
+```bash
+brew update && brew upgrade amaranth-check
+```
+
+The app auto-restarts after upgrade.
 
 ## Usage
 
 ```bash
-amaranth-check           # Start menu bar app
+amaranth-check           # Start menu bar app (restarts if already running)
 amaranth-check --status  # Show status in terminal
 amaranth-check --help    # Help
 ```
@@ -32,12 +45,12 @@ amaranth-check --help    # Help
 - **1-minute countdown** in menu bar (e.g. `7h32m left`)
 - **Auto background refresh** every 10 minutes via headless browser
 - **Notification** when work time is done
+- **Dark mode support** with separate light/dark color settings
 - **Settings window** (menu bar → Settings...)
   - Account: credentials
-  - Appearance: time format (8h32m / 512m / 8:32), labels, emoji, progress bar, colors
+  - Appearance: time format (8h32m / 512m / 8:32), labels, emoji, progress bar, color picker
   - General: launch at login, notification toggle
-- **Launch at Login** via LaunchAgent
-- `brew upgrade amaranth-check` to update
+- **Launch at Login** via LaunchAgent (enabled by default)
 
 ## How it works
 
@@ -60,7 +73,7 @@ amaranth-check --help    # Help
 ## Development
 
 ```bash
-git clone git@github.com:STCLab-Inc/amaranth-check.git
+git clone https://github.com/STCLab-Inc/amaranth-check.git
 cd amaranth-check
 swift build
 .build/debug/amaranth-check --foreground
@@ -68,13 +81,13 @@ swift build
 
 ### Requirements
 
-- macOS 13+
-- Xcode 15+ (for building)
+- macOS 13+ (Apple Silicon)
+- Xcode 15+ (for building from source only)
 - Node.js (for Playwright scraper)
 
 ## Contributing
 
-1. Fork or create a branch
+1. Create a branch
 2. Make changes
 3. `swift build` to verify
 4. Open a PR
@@ -86,4 +99,6 @@ After merging, bump the version in [homebrew-stclab](https://github.com/STCLab-I
 ```bash
 brew uninstall amaranth-check
 rm -rf ~/.amaranth-check ~/.amaranth-session
+launchctl unload ~/Library/LaunchAgents/com.stclab.amaranth-check.plist 2>/dev/null
+rm -f ~/Library/LaunchAgents/com.stclab.amaranth-check.plist
 ```
