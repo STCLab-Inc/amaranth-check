@@ -10,10 +10,14 @@ struct AppConfig: Codable {
     var labelNoData: String
     var emojiDone: String
     var showProgressBar: Bool
-    var colorEarly: String  // hex
+    var colorEarly: String  // hex (light mode)
     var colorMid: String
     var colorLate: String
     var colorDone: String
+    var colorEarlyDark: String
+    var colorMidDark: String
+    var colorLateDark: String
+    var colorDoneDark: String
     var timeFormat: String   // "hm" = 8h32m, "m" = 512m, "colon" = 8:32
     var notifyOnDone: Bool
     var launchAtLogin: Bool
@@ -31,6 +35,10 @@ struct AppConfig: Codable {
         colorMid: "#FF9500",
         colorLate: "#FF3B30",
         colorDone: "#34C759",
+        colorEarlyDark: "#30D158",
+        colorMidDark: "#FFD60A",
+        colorLateDark: "#FF453A",
+        colorDoneDark: "#30D158",
         timeFormat: "hm",
         notifyOnDone: true,
         launchAtLogin: true
@@ -59,10 +67,31 @@ enum AppPaths {
 
 func loadConfig() -> AppConfig {
     guard let data = FileManager.default.contents(atPath: AppPaths.configFile),
-          let config = try? JSONDecoder().decode(AppConfig.self, from: data) else {
+          let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
         return .default
     }
-    return config
+    let d = AppConfig.default
+    return AppConfig(
+        company: json["company"] as? String ?? d.company,
+        userId: json["userId"] as? String ?? d.userId,
+        password: json["password"] as? String ?? d.password,
+        labelLeft: json["labelLeft"] as? String ?? d.labelLeft,
+        labelDone: json["labelDone"] as? String ?? d.labelDone,
+        labelNoData: json["labelNoData"] as? String ?? d.labelNoData,
+        emojiDone: json["emojiDone"] as? String ?? d.emojiDone,
+        showProgressBar: json["showProgressBar"] as? Bool ?? d.showProgressBar,
+        colorEarly: json["colorEarly"] as? String ?? d.colorEarly,
+        colorMid: json["colorMid"] as? String ?? d.colorMid,
+        colorLate: json["colorLate"] as? String ?? d.colorLate,
+        colorDone: json["colorDone"] as? String ?? d.colorDone,
+        colorEarlyDark: json["colorEarlyDark"] as? String ?? d.colorEarlyDark,
+        colorMidDark: json["colorMidDark"] as? String ?? d.colorMidDark,
+        colorLateDark: json["colorLateDark"] as? String ?? d.colorLateDark,
+        colorDoneDark: json["colorDoneDark"] as? String ?? d.colorDoneDark,
+        timeFormat: json["timeFormat"] as? String ?? d.timeFormat,
+        notifyOnDone: json["notifyOnDone"] as? Bool ?? d.notifyOnDone,
+        launchAtLogin: json["launchAtLogin"] as? Bool ?? d.launchAtLogin
+    )
 }
 
 func saveConfig(_ config: AppConfig) {

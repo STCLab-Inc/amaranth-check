@@ -46,8 +46,7 @@ class StatusBarController: NSObject {
         let leaveEst = formatMinutes(leaveMin)
 
         if let leave = cache.leave, !leave.isEmpty {
-            statusItem.button?.title = "\(config.emojiDone) \(config.labelDone)"
-            statusItem.button?.contentTintColor = nsColor(config.colorDone)
+            setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
             buildMenu(come: come, leaveEst: leaveEst, leave: leave, remain: nil, pct: 100)
             notifyDoneIfNeeded()
             return
@@ -60,22 +59,40 @@ class StatusBarController: NSObject {
         let pct = min(100, max(0, elapsed * 100 / 540))
 
         if remain <= 0 {
-            statusItem.button?.title = "\(config.emojiDone) \(config.labelDone)"
-            statusItem.button?.contentTintColor = nsColor(config.colorDone)
+            setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
             notifyDoneIfNeeded()
         } else {
             let timeStr = formatRemain(remain, format: config.timeFormat)
-            statusItem.button?.title = "\(timeStr) \(config.labelLeft)"
-            statusItem.button?.contentTintColor = pctColor(pct)
+            setStatusTitle("\(timeStr) \(config.labelLeft)", color: pctColor(pct))
         }
 
         buildMenu(come: come, leaveEst: leaveEst, leave: nil, remain: remain > 0 ? remain : nil, pct: pct)
     }
 
+    func setStatusTitle(_ text: String, color: NSColor) {
+        statusItem.button?.title = ""
+        statusItem.button?.attributedTitle = NSAttributedString(
+            string: text,
+            attributes: [
+                .foregroundColor: color,
+                .font: NSFont.monospacedDigitSystemFont(ofSize: 0, weight: .medium),
+            ]
+        )
+    }
+
+    var isDarkMode: Bool {
+        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
+
     func pctColor(_ pct: Int) -> NSColor {
-        if pct < 40 { return nsColor(config.colorEarly) }
-        if pct < 80 { return nsColor(config.colorMid) }
-        return nsColor(config.colorLate)
+        let dark = isDarkMode
+        if pct < 40 { return nsColor(dark ? config.colorEarlyDark : config.colorEarly) }
+        if pct < 80 { return nsColor(dark ? config.colorMidDark : config.colorMid) }
+        return nsColor(dark ? config.colorLateDark : config.colorLate)
+    }
+
+    func doneColor() -> NSColor {
+        nsColor(isDarkMode ? config.colorDoneDark : config.colorDone)
     }
 
     func nsColor(_ hex: String) -> NSColor {

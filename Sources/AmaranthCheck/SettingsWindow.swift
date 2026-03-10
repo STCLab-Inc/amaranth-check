@@ -14,7 +14,7 @@ struct SettingsView: View {
             appearanceTab.tabItem { Label("Appearance", systemImage: "paintbrush") }
             generalTab.tabItem { Label("General", systemImage: "gear") }
         }
-        .frame(width: 480, height: 480)
+        .frame(width: 480, height: 560)
     }
 
     // MARK: Account Tab
@@ -84,11 +84,18 @@ struct SettingsView: View {
 
             Divider()
 
-            Text("Time Colors").font(.headline)
+            Text("Time Colors — Light").font(.headline)
             HStack(spacing: 16) {
                 colorField("Early (0-40%)", hex: $config.colorEarly)
                 colorField("Mid (40-80%)", hex: $config.colorMid)
                 colorField("Late (80%+)", hex: $config.colorLate)
+            }
+
+            Text("Time Colors — Dark").font(.headline)
+            HStack(spacing: 16) {
+                colorField("Early (0-40%)", hex: $config.colorEarlyDark)
+                colorField("Mid (40-80%)", hex: $config.colorMidDark)
+                colorField("Late (80%+)", hex: $config.colorLateDark)
             }
 
             Spacer()
@@ -99,10 +106,18 @@ struct SettingsView: View {
     func colorField(_ label: String, hex: Binding<String>) -> some View {
         VStack(spacing: 4) {
             Text(label).font(.caption).foregroundColor(.secondary)
-            TextField("", text: hex)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 90)
-                .font(.system(.body, design: .monospaced))
+            HStack(spacing: 4) {
+                TextField("", text: hex)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 80)
+                    .font(.system(.body, design: .monospaced))
+                ColorPicker("", selection: Binding(
+                    get: { hexToColor(hex.wrappedValue) },
+                    set: { hex.wrappedValue = colorToHex($0) }
+                ), supportsOpacity: false)
+                .labelsHidden()
+                .frame(width: 24)
+            }
         }
     }
 
@@ -143,6 +158,19 @@ struct SettingsView: View {
         saved = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { saved = false }
     }
+}
+
+func hexToColor(_ hex: String) -> Color {
+    let c = hexColor(hex)
+    return Color(red: c.r, green: c.g, blue: c.b)
+}
+
+func colorToHex(_ color: Color) -> String {
+    guard let c = NSColor(color).usingColorSpace(.sRGB) else { return "#000000" }
+    let r = Int(c.redComponent * 255)
+    let g = Int(c.greenComponent * 255)
+    let b = Int(c.blueComponent * 255)
+    return String(format: "#%02X%02X%02X", r, g, b)
 }
 
 func findBinaryPath() -> String? {
