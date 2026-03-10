@@ -13,9 +13,14 @@ class StatusBarController: NSObject {
         requestNotificationPermission()
         updateDisplay()
 
-        // 1분마다 화면 갱신
-        displayTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+        // 다음 정분에 맞춰 갱신 시작
+        let seconds = Calendar.current.component(.second, from: Date())
+        let delay = TimeInterval(60 - seconds)
+        Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             self?.updateDisplay()
+            self?.displayTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+                self?.updateDisplay()
+            }
         }
 
         // 10분마다 캐시 갱신
