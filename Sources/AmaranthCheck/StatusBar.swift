@@ -1,6 +1,6 @@
 import AppKit
 
-class StatusBarController {
+class StatusBarController: NSObject {
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     var displayTimer: Timer?
     var refreshTimer: Timer?
@@ -8,7 +8,8 @@ class StatusBarController {
     let settingsController = SettingsWindowController()
     var lastNotifiedDone = false
 
-    init() {
+    override init() {
+        super.init()
         requestNotificationPermission()
         updateDisplay()
 
@@ -63,8 +64,8 @@ class StatusBarController {
             statusItem.button?.contentTintColor = nsColor(config.colorDone)
             notifyDoneIfNeeded()
         } else {
-            let h = remain / 60, m = remain % 60
-            statusItem.button?.title = "\(h)h\(m)m \(config.labelLeft)"
+            let timeStr = formatRemain(remain, format: config.timeFormat)
+            statusItem.button?.title = "\(timeStr) \(config.labelLeft)"
             statusItem.button?.contentTintColor = pctColor(pct)
         }
 

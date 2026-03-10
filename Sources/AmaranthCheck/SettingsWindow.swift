@@ -14,95 +14,118 @@ struct SettingsView: View {
             appearanceTab.tabItem { Label("Appearance", systemImage: "paintbrush") }
             generalTab.tabItem { Label("General", systemImage: "gear") }
         }
-        .frame(width: 420, height: 340)
-        .padding()
+        .frame(width: 480, height: 480)
     }
 
     // MARK: Account Tab
 
     var accountTab: some View {
-        Form {
-            Section("Amaranth Login") {
-                TextField("Company Code", text: $config.company)
-                TextField("User ID", text: $config.userId)
-                SecureField("Password", text: $config.password)
-            }
-            HStack {
-                Spacer()
-                if saved {
-                    Text("Saved!").foregroundColor(.green).font(.caption)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Amaranth Login").font(.headline)
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
+                GridRow {
+                    Text("Company Code").frame(width: 120, alignment: .trailing)
+                    TextField("stclab", text: $config.company).textFieldStyle(.roundedBorder)
                 }
-                Button("Save") { doSave() }.keyboardShortcut(.defaultAction)
+                GridRow {
+                    Text("User ID").frame(width: 120, alignment: .trailing)
+                    TextField("", text: $config.userId).textFieldStyle(.roundedBorder)
+                }
+                GridRow {
+                    Text("Password").frame(width: 120, alignment: .trailing)
+                    SecureField("", text: $config.password).textFieldStyle(.roundedBorder)
+                }
             }
-        }.padding()
+            Spacer()
+            saveBar
+        }.padding(20)
     }
 
     // MARK: Appearance Tab
 
     var appearanceTab: some View {
-        Form {
-            Section("Menu Bar Text") {
-                HStack {
-                    Text("Working")
-                    Spacer()
-                    TextField("", text: $config.labelLeft).frame(width: 100).textFieldStyle(.roundedBorder)
-                    Text("→ 8h32m \(config.labelLeft)").foregroundColor(.secondary).font(.caption)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Menu Bar Text").font(.headline)
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
+                GridRow {
+                    Text("Working").frame(width: 100, alignment: .trailing)
+                    TextField("", text: $config.labelLeft).textFieldStyle(.roundedBorder).frame(width: 80)
+                    Text("\(formatRemain(512, format: config.timeFormat)) \(config.labelLeft)").foregroundColor(.secondary).font(.caption)
                 }
-                HStack {
-                    Text("Done")
-                    Spacer()
-                    TextField("", text: $config.labelDone).frame(width: 100).textFieldStyle(.roundedBorder)
+                GridRow {
+                    Text("Done").frame(width: 100, alignment: .trailing)
+                    TextField("", text: $config.labelDone).textFieldStyle(.roundedBorder).frame(width: 80)
+                    Text("").gridCellUnsizedAxes(.horizontal)
                 }
-                HStack {
-                    Text("No data")
-                    Spacer()
-                    TextField("", text: $config.labelNoData).frame(width: 100).textFieldStyle(.roundedBorder)
+                GridRow {
+                    Text("No data").frame(width: 100, alignment: .trailing)
+                    TextField("", text: $config.labelNoData).textFieldStyle(.roundedBorder).frame(width: 80)
+                    Text("").gridCellUnsizedAxes(.horizontal)
                 }
-                HStack {
-                    Text("Done emoji")
-                    Spacer()
-                    TextField("", text: $config.emojiDone).frame(width: 100).textFieldStyle(.roundedBorder)
-                }
-            }
-            Section("Progress Bar") {
-                Toggle("Show in dropdown", isOn: $config.showProgressBar)
-            }
-            Section("Colors (hex)") {
-                HStack {
-                    colorRow("Early (0-40%)", hex: $config.colorEarly)
-                    colorRow("Mid (40-80%)", hex: $config.colorMid)
-                    colorRow("Late (80%+)", hex: $config.colorLate)
+                GridRow {
+                    Text("Done emoji").frame(width: 100, alignment: .trailing)
+                    TextField("", text: $config.emojiDone).textFieldStyle(.roundedBorder).frame(width: 80)
+                    Text("").gridCellUnsizedAxes(.horizontal)
                 }
             }
+
+            Divider()
+
             HStack {
-                Spacer()
-                if saved { Text("Saved!").foregroundColor(.green).font(.caption) }
-                Button("Save") { doSave() }.keyboardShortcut(.defaultAction)
+                Text("Time format")
+                Picker("", selection: $config.timeFormat) {
+                    Text("8h32m").tag("hm")
+                    Text("512m").tag("m")
+                    Text("8:32").tag("colon")
+                }.pickerStyle(.segmented).frame(width: 200)
             }
-        }.padding()
+
+            Toggle("Show progress bar in dropdown", isOn: $config.showProgressBar)
+
+            Divider()
+
+            Text("Time Colors").font(.headline)
+            HStack(spacing: 16) {
+                colorField("Early (0-40%)", hex: $config.colorEarly)
+                colorField("Mid (40-80%)", hex: $config.colorMid)
+                colorField("Late (80%+)", hex: $config.colorLate)
+            }
+
+            Spacer()
+            saveBar
+        }.padding(20)
     }
 
-    func colorRow(_ label: String, hex: Binding<String>) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.caption2).foregroundColor(.secondary)
-            TextField("", text: hex).frame(width: 80).textFieldStyle(.roundedBorder).font(.system(.caption, design: .monospaced))
+    func colorField(_ label: String, hex: Binding<String>) -> some View {
+        VStack(spacing: 4) {
+            Text(label).font(.caption).foregroundColor(.secondary)
+            TextField("", text: hex)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 90)
+                .font(.system(.body, design: .monospaced))
         }
     }
 
     // MARK: General Tab
 
     var generalTab: some View {
-        Form {
-            Section {
-                Toggle("Launch at Login", isOn: $config.launchAtLogin)
-                Toggle("Notify when done", isOn: $config.notifyOnDone)
-            }
-            HStack {
-                Spacer()
-                if saved { Text("Saved!").foregroundColor(.green).font(.caption) }
-                Button("Save") { doSave() }.keyboardShortcut(.defaultAction)
-            }
-        }.padding()
+        VStack(alignment: .leading, spacing: 16) {
+            Text("General").font(.headline)
+            Toggle("Launch at Login", isOn: $config.launchAtLogin)
+            Toggle("Notify when done", isOn: $config.notifyOnDone)
+            Spacer()
+            saveBar
+        }.padding(20)
+    }
+
+    // MARK: Save Bar
+
+    var saveBar: some View {
+        HStack {
+            Spacer()
+            if saved { Text("Saved!").foregroundColor(.green).font(.caption) }
+            Button("Save") { doSave() }.keyboardShortcut(.defaultAction)
+        }
     }
 
     func doSave() {

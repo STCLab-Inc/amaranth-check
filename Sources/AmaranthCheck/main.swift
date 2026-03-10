@@ -82,9 +82,9 @@ if config.userId.isEmpty {
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 
-let _ = StatusBarController()
-
-app.run()
+withExtendedLifetime(StatusBarController()) {
+    app.run()
+}
 
 // MARK: - Terminal helpers
 

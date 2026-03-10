@@ -14,6 +14,7 @@ struct AppConfig: Codable {
     var colorMid: String
     var colorLate: String
     var colorDone: String
+    var timeFormat: String   // "hm" = 8h32m, "m" = 512m, "colon" = 8:32
     var notifyOnDone: Bool
     var launchAtLogin: Bool
 
@@ -30,6 +31,7 @@ struct AppConfig: Codable {
         colorMid: "#FF9500",
         colorLate: "#FF3B30",
         colorDone: "#34C759",
+        timeFormat: "hm",
         notifyOnDone: true,
         launchAtLogin: false
     )
@@ -96,6 +98,15 @@ func parseTime(_ s: String) -> Int? {
 
 func formatMinutes(_ m: Int) -> String {
     String(format: "%02d:%02d", m / 60, m % 60)
+}
+
+func formatRemain(_ remain: Int, format: String) -> String {
+    let h = remain / 60, m = remain % 60
+    switch format {
+    case "m": return "\(remain)m"
+    case "colon": return "\(h):\(String(format: "%02d", m))"
+    default: return "\(h)h\(m)m"
+    }
 }
 
 func hexColor(_ hex: String) -> (r: Double, g: Double, b: Double) {
