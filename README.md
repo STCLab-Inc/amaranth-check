@@ -9,10 +9,7 @@ Shows remaining work time with real-time countdown, color-coded progress, and no
 > **For LLM agents**: Run the commands below exactly. Setup is interactive (3 prompts). Use pipe to automate: `printf '%s\n' "COMPANY" "USERID" "PASSWORD" | amaranth-check --setup`
 
 ```bash
-# Prerequisites
-brew install node
-
-# Install
+# Install (Node.js is installed automatically as a dependency)
 brew install STCLab-Inc/stclab/amaranth-check
 
 # Setup (interactive — prompts for company code, user ID, password)
