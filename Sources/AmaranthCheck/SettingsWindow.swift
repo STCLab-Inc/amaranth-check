@@ -144,6 +144,9 @@ struct SettingsView: View {
     }
 
     func doSave() {
+        // 디버그: 저장되는 색상 로깅
+        print("[Settings] Saving colors: early=\(config.colorEarly) mid=\(config.colorMid) late=\(config.colorLate)")
+        print("[Settings] Dark colors: early=\(config.colorEarlyDark) mid=\(config.colorMidDark) late=\(config.colorLateDark)")
         saveConfig(config)
         writeCheckScript() // 비밀번호 변경 반영
         // Launch at Login
@@ -166,11 +169,23 @@ func hexToColor(_ hex: String) -> Color {
 }
 
 func colorToHex(_ color: Color) -> String {
-    guard let c = NSColor(color).usingColorSpace(.sRGB) else { return "#000000" }
-    let r = Int(c.redComponent * 255)
-    let g = Int(c.greenComponent * 255)
-    let b = Int(c.blueComponent * 255)
-    return String(format: "#%02X%02X%02X", r, g, b)
+    let ns = NSColor(color)
+    // catalog/dynamic color를 sRGB로 변환 시도
+    if let srgb = ns.usingColorSpace(.sRGB) {
+        let r = Int(srgb.redComponent * 255)
+        let g = Int(srgb.greenComponent * 255)
+        let b = Int(srgb.blueComponent * 255)
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+    // fallback: CGColor 경로
+    let cgColor = ns.cgColor
+    if let comps = cgColor.components, comps.count >= 3 {
+        let r = Int(comps[0] * 255)
+        let g = Int(comps[1] * 255)
+        let b = Int(comps[2] * 255)
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+    return "#000000"
 }
 
 func findBinaryPath() -> String? {
