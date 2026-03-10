@@ -86,6 +86,19 @@ if config.userId.isEmpty {
 
 // --foreground가 없으면 자동 fork해서 터미널을 즉시 반환
 if !args.contains("--foreground") {
+    // 이미 실행 중이면 중복 실행 방지
+    let check = Process()
+    check.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+    check.arguments = ["-f", "amaranth-check --foreground"]
+    check.standardOutput = FileHandle.nullDevice
+    check.standardError = FileHandle.nullDevice
+    try? check.run()
+    check.waitUntilExit()
+    if check.terminationStatus == 0 {
+        print("Amaranth Check is already running in the menu bar.")
+        exit(0)
+    }
+
     let execPath = ProcessInfo.processInfo.arguments[0]
     let task = Process()
     task.executableURL = URL(fileURLWithPath: execPath)
