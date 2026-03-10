@@ -5,6 +5,20 @@ import AppKit
 let args = CommandLine.arguments
 
 if args.contains("--setup") {
+    // node 체크
+    let nodeCheck = Process()
+    nodeCheck.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+    nodeCheck.arguments = ["node", "--version"]
+    nodeCheck.standardOutput = FileHandle.nullDevice
+    nodeCheck.standardError = FileHandle.nullDevice
+    try? nodeCheck.run()
+    nodeCheck.waitUntilExit()
+    if nodeCheck.terminationStatus != 0 {
+        print("Error: Node.js is required but not found.")
+        print("Install it with: brew install node (or nvm/mise)")
+        exit(1)
+    }
+
     print("Amaranth Check Setup")
     print("====================")
     var config = loadConfig()
