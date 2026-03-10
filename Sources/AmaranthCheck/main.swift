@@ -79,6 +79,19 @@ if config.userId.isEmpty {
 
 // MARK: - Menu Bar App
 
+// --foreground가 없으면 자동 fork해서 터미널을 즉시 반환
+if !args.contains("--foreground") {
+    let execPath = ProcessInfo.processInfo.arguments[0]
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: execPath)
+    task.arguments = ["--foreground"]
+    task.standardOutput = FileHandle.nullDevice
+    task.standardError = FileHandle.nullDevice
+    try? task.run()
+    print("Amaranth Check is running in the menu bar.")
+    exit(0)
+}
+
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 
