@@ -37,9 +37,22 @@ func writeCheckScript() {
     const USER_ID = \(jsonString(config.userId));
     const PASSWORD = \(jsonString(config.password));
 
+    async function launchBrowser() {
+      try {
+        return await chromium.launchPersistentContext(USER_DATA_DIR, { headless: true });
+      } catch (e) {
+        if (e.message && e.message.includes("Executable doesn't exist")) {
+          const { execSync } = await import("child_process");
+          execSync("npx playwright install chromium", { cwd: join(homedir(), ".amaranth-check"), stdio: "ignore" });
+          return await chromium.launchPersistentContext(USER_DATA_DIR, { headless: true });
+        }
+        throw e;
+      }
+    }
+
     async function main() {
       try { rmSync(join(USER_DATA_DIR, "SingletonLock")); } catch {}
-      const context = await chromium.launchPersistentContext(USER_DATA_DIR, { headless: true });
+      const context = await launchBrowser();
       const page = context.pages()[0] || (await context.newPage());
 
       await page.goto("https://gw.stclab.com/", { waitUntil: "networkidle", timeout: 20000 });
