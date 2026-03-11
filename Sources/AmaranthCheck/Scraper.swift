@@ -64,9 +64,16 @@ func writeCheckScript() {
       await page.waitForTimeout(3000);
 
       const result = await page.evaluate(() => {
-        const rows = Array.from(document.querySelectorAll("table tr"));
+        let targetTable = null;
+        for (const t of document.querySelectorAll("table")) {
+          const firstCell = t.querySelector("tr td, tr th");
+          if (firstCell && firstCell.innerText.trim() === "구분") { targetTable = t; break; }
+        }
+        if (!targetTable) return null;
+        const rows = Array.from(targetTable.querySelectorAll("tr"));
         if (rows.length < 3) return null;
         const headers = Array.from(rows[0].querySelectorAll("td,th")).map(c => c.innerText.trim());
+        const attendTypes = Array.from(rows[1].querySelectorAll("td,th")).map(c => c.innerText.trim());
         const times = Array.from(rows[2].querySelectorAll("td,th")).map(c => c.innerText.trim());
         const today = new Date();
         const todayKey = (today.getMonth() + 1) + "월 " + today.getDate() + "일";
@@ -76,10 +83,46 @@ func writeCheckScript() {
           let come = null, leave = null;
           if (lines[0]) { const m = lines[0].match(/\\((\\d{2}:\\d{2})\\)/); if (m) come = m[1]; }
           if (lines[1]) { const m = lines[1].match(/\\((\\d{2}:\\d{2})\\)/); if (m) leave = m[1]; }
-          return { come, leave };
+          return { come, leave, attendType: attendTypes[i] || null };
         }
         return null;
       });
+
+      // 시간연차인 경우 HPD0120에서 정확한 연차 시간 가져오기
+      let leaveMinutes = null;
+      if (result && result.attendType && result.attendType.includes("시간연차")) {
+        await page.goto("https://gw.stclab.com/#/HP/HPD0120/HPD0120", {
+          waitUntil: "networkidle", timeout: 20000,
+        });
+        await page.waitForTimeout(5000);
+
+        leaveMinutes = await page.evaluate(() => {
+          const grids = document.querySelectorAll("[id^=grid_]");
+          for (const g of grids) {
+            if (!g.gridView) continue;
+            try {
+              const dp = g.gridView.getDataProvider();
+              const count = dp.getRowCount();
+              if (count === 0) continue;
+              const today = new Date();
+              const ymd = today.getFullYear().toString() +
+                String(today.getMonth() + 1).padStart(2, "0") +
+                String(today.getDate()).padStart(2, "0");
+              for (let i = 0; i < count; i++) {
+                const r = dp.getJsonRow(i);
+                if (r.atNm === "시간연차" && r.startDt === ymd && r.approStateNm === "결재완료") {
+                  const sh = parseInt(r.startTm.substring(0, 2), 10);
+                  const sm = parseInt(r.startTm.substring(2, 4), 10);
+                  const eh = parseInt(r.endTm.substring(0, 2), 10);
+                  const em = parseInt(r.endTm.substring(2, 4), 10);
+                  return (eh * 60 + em) - (sh * 60 + sm);
+                }
+              }
+            } catch {}
+          }
+          return null;
+        });
+      }
 
       await context.close();
 
@@ -87,6 +130,7 @@ func writeCheckScript() {
         date: new Date().toISOString().slice(0, 10),
         come: result?.come || null,
         leave: result?.leave || null,
+        leaveMinutes: leaveMinutes,
       };
       writeFileSync(join(homedir(), ".amaranth-check", "cache.json"), JSON.stringify(cache));
     }
@@ -99,6 +143,7 @@ func writeCheckScript() {
 
 func refreshCache(completion: (() -> Void)? = nil) {
     DispatchQueue.global().async {
+        writeCheckScript()
         runShell("cd \(AppPaths.configDir) && node check.mjs 2>/dev/null")
         DispatchQueue.main.async { completion?() }
     }

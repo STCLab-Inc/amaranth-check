@@ -48,12 +48,13 @@ class StatusBarController: NSObject {
 
         statusItem.button?.image = nil
         let effectiveStart = max(comeMin, 480)
-        let leaveMin = effectiveStart + 540
+        let requiredMin = 540 - (cache.leaveMinutes ?? 0)
+        let leaveMin = effectiveStart + requiredMin
         let leaveEst = formatMinutes(leaveMin)
 
         if let leave = cache.leave, !leave.isEmpty {
             setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
-            buildMenu(come: come, leaveEst: leaveEst, leave: leave, remain: nil, pct: 100)
+            buildMenu(come: come, leaveEst: leaveEst, leave: leave, remain: nil, pct: 100, leaveMinutes: cache.leaveMinutes)
             notifyDoneIfNeeded()
             return
         }
@@ -62,7 +63,7 @@ class StatusBarController: NSObject {
         let nowMin = cal.component(.hour, from: Date()) * 60 + cal.component(.minute, from: Date())
         let remain = leaveMin - nowMin
         let elapsed = nowMin - effectiveStart
-        let pct = min(100, max(0, elapsed * 100 / 540))
+        let pct = requiredMin > 0 ? min(100, max(0, elapsed * 100 / requiredMin)) : 100
 
         if remain <= 0 {
             setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
@@ -72,7 +73,7 @@ class StatusBarController: NSObject {
             setStatusTitle("\(timeStr) \(config.labelLeft)", color: pctColor(pct))
         }
 
-        buildMenu(come: come, leaveEst: leaveEst, leave: nil, remain: remain > 0 ? remain : nil, pct: pct)
+        buildMenu(come: come, leaveEst: leaveEst, leave: nil, remain: remain > 0 ? remain : nil, pct: pct, leaveMinutes: cache.leaveMinutes)
     }
 
     func setStatusTitle(_ text: String, color: NSColor) {
@@ -108,7 +109,7 @@ class StatusBarController: NSObject {
 
     // MARK: - Menu
 
-    func buildMenu(come: String?, leaveEst: String?, leave: String?, remain: Int?, pct: Int?) {
+    func buildMenu(come: String?, leaveEst: String?, leave: String?, remain: Int?, pct: Int?, leaveMinutes: Int? = nil) {
         let menu = NSMenu()
 
         // 날짜
@@ -130,6 +131,19 @@ class StatusBarController: NSObject {
             let noData = NSMenuItem(title: "No check-in today", action: nil, keyEquivalent: "")
             noData.isEnabled = false
             menu.addItem(noData)
+        }
+
+        // 시간연차
+        if let lm = leaveMinutes, lm > 0 {
+            let h = lm / 60, m = lm % 60
+            let timeStr = h > 0 && m > 0 ? "\(h)h \(m)m" : h > 0 ? "\(h)h" : "\(m)m"
+            let leaveItem = NSMenuItem(title: "Leave: \(timeStr)", action: nil, keyEquivalent: "")
+            leaveItem.isEnabled = false
+            leaveItem.attributedTitle = NSAttributedString(
+                string: leaveItem.title,
+                attributes: [.font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)]
+            )
+            menu.addItem(leaveItem)
         }
 
         // 진행바

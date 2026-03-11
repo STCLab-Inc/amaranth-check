@@ -49,6 +49,7 @@ struct AttendanceCache: Codable {
     let date: String
     let come: String?
     let leave: String?
+    let leaveMinutes: Int?  // 시간연차 분 (e.g. 120 = 2시간)
 }
 
 // MARK: - Paths
