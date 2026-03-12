@@ -176,7 +176,7 @@ func writeCheckScript() {
 func refreshCache(completion: (() -> Void)? = nil) {
     DispatchQueue.global().async {
         writeCheckScript()
-        runShell("cd \(AppPaths.configDir) && node check.mjs 2>/dev/null")
+        runShell("cd \(AppPaths.configDir) && node check.mjs 2>>\(AppPaths.configDir)/error.log")
         DispatchQueue.main.async { completion?() }
     }
 }
