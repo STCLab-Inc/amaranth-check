@@ -42,10 +42,14 @@ jobs:
           else
             COMMITS=$(git log --format="• %s" "${{ github.ref_name }}" -- | head -20 | grep -v "^• Merge")
           fi
+          # For GitHub Release (multiline)
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "COMMITS<<$EOF" >> "$GITHUB_OUTPUT"
           echo "$COMMITS" >> "$GITHUB_OUTPUT"
           echo "$EOF" >> "$GITHUB_OUTPUT"
+          # For Slack (escaped newlines for JSON)
+          SLACK_COMMITS=$(echo "$COMMITS" | sed ':a;N;$!ba;s/\n/\\n/g')
+          echo "SLACK_COMMITS=$SLACK_COMMITS" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         run: |
@@ -73,5 +77,5 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": "*amaranth-check ${{ github.ref_name }}* released\n\n${{ steps.notes.outputs.COMMITS }}\n\n<${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}|View Release>\n\n`brew update && brew upgrade amaranth-check`"
+              "text": "*amaranth-check ${{ github.ref_name }}* released\n\n${{ steps.notes.outputs.SLACK_COMMITS }}\n\n<${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}|View Release>\n\n`brew update && brew upgrade amaranth-check`"
             }
