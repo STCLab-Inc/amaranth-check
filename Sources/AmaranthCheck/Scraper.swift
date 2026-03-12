@@ -50,11 +50,7 @@ func writeCheckScript() {
       }
     }
 
-    async function main() {
-      try { rmSync(join(USER_DATA_DIR, "SingletonLock")); } catch {}
-      const context = await launchBrowser();
-      const page = context.pages()[0] || (await context.newPage());
-
+    async function tryLogin(context, page) {
       await page.goto("https://gw.stclab.com/", { waitUntil: "networkidle", timeout: 20000 });
 
       if (page.url().includes("login")) {
@@ -68,6 +64,29 @@ func writeCheckScript() {
         await page.fill("#reqLoginPw", PASSWORD);
         await page.click("button >> text=로그인");
         await page.waitForTimeout(5000);
+      }
+
+      // 로그인 후에도 여전히 login 페이지면 실패
+      if (page.url().includes("login")) {
+        throw new Error("login_failed");
+      }
+    }
+
+    async function main(retry = false) {
+      try { rmSync(join(USER_DATA_DIR, "SingletonLock")); } catch {}
+      const context = await launchBrowser();
+      const page = context.pages()[0] || (await context.newPage());
+
+      try {
+        await tryLogin(context, page);
+      } catch (e) {
+        await context.close();
+        if (!retry) {
+          // 세션 초기화 후 1회 재시도
+          rmSync(USER_DATA_DIR, { recursive: true, force: true });
+          return main(true);
+        }
+        throw e;
       }
 
       await page.goto("https://gw.stclab.com/#/HP/HPD0210/HPD0210", {

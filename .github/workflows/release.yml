@@ -73,5 +73,5 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": "*amaranth-check ${{ github.ref_name }}* released\n\n${{ steps.notes.outputs.COMMITS }}\n\n<${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}|View Release>"
+              "text": "*amaranth-check ${{ github.ref_name }}* released\n\n${{ steps.notes.outputs.COMMITS }}\n\n<${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}|View Release>\n\n`brew update && brew upgrade amaranth-check`"
             }
