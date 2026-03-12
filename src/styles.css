@@ -4,11 +4,43 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg: #f5f5f5;
+  --text: #1a1a1a;
+  --text-muted: #666;
+  --text-label: #555;
+  --surface: #fff;
+  --border: #ccc;
+  --border-light: #ddd;
+  --tab-hover: #e8e8e8;
+  --tab-active: #ddd;
+  --tab-active-text: #1a1a1a;
+  --input-bg: #fff;
+  --accent: #0078d4;
+  --accent-hover: #006cbd;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1e1e;
+    --text: #e0e0e0;
+    --text-muted: #888;
+    --text-label: #999;
+    --surface: #2a2a2a;
+    --border: #444;
+    --border-light: #333;
+    --tab-hover: #2a2a2a;
+    --tab-active: #333;
+    --tab-active-text: #fff;
+    --input-bg: #2a2a2a;
+  }
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 14px;
-  background: #1e1e1e;
-  color: #e0e0e0;
+  background: var(--bg);
+  color: var(--text);
   padding: 16px;
   user-select: none;
 }
@@ -24,18 +56,19 @@ h2 {
   margin-bottom: 12px;
 }
 
+/* Tabs */
 .tabs {
   display: flex;
   gap: 4px;
   margin-bottom: 16px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-light);
   padding-bottom: 8px;
 }
 
 .tab {
   background: none;
   border: none;
-  color: #888;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 6px 12px;
   border-radius: 4px;
@@ -43,13 +76,13 @@ h2 {
 }
 
 .tab:hover {
-  color: #e0e0e0;
-  background: #2a2a2a;
+  color: var(--text);
+  background: var(--tab-hover);
 }
 
 .tab.active {
-  color: #fff;
-  background: #333;
+  color: var(--tab-active-text);
+  background: var(--tab-active);
 }
 
 .tab-content {
@@ -61,6 +94,7 @@ h2 {
   display: block;
 }
 
+/* Fields */
 .field {
   margin-bottom: 12px;
 }
@@ -68,7 +102,7 @@ h2 {
 .field label {
   display: block;
   font-size: 12px;
-  color: #999;
+  color: var(--text-label);
   margin-bottom: 4px;
 }
 
@@ -77,17 +111,17 @@ h2 {
 .field select {
   width: 100%;
   padding: 8px 10px;
-  background: #2a2a2a;
-  border: 1px solid #444;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #e0e0e0;
+  color: var(--text);
   font-size: 14px;
 }
 
 .field input:focus,
 .field select:focus {
   outline: none;
-  border-color: #0078d4;
+  border-color: var(--accent);
 }
 
 .field.checkbox label {
@@ -95,7 +129,7 @@ h2 {
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: #e0e0e0;
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -108,11 +142,11 @@ h2 {
 .section-title {
   font-size: 13px;
   font-weight: 600;
-  color: #ccc;
+  color: var(--text);
   margin-top: 16px;
   margin-bottom: 8px;
   padding-top: 8px;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--border-light);
 }
 
 /* Emoji picker */
@@ -130,9 +164,9 @@ h2 {
 .emoji-grid {
   margin-top: 8px;
   padding: 10px;
-  background: #2a2a2a;
+  background: var(--surface);
   border-radius: 6px;
-  border: 1px solid #444;
+  border: 1px solid var(--border);
 }
 
 .emoji-grid.hidden {
@@ -157,12 +191,12 @@ h2 {
 }
 
 .emoji-presets button:hover {
-  background: #444;
+  background: var(--tab-hover);
 }
 
 .emoji-presets button.selected {
-  background: rgba(0, 120, 212, 0.3);
-  border-color: #0078d4;
+  background: rgba(0, 120, 212, 0.2);
+  border-color: var(--accent);
 }
 
 .emoji-custom {
@@ -170,27 +204,27 @@ h2 {
   align-items: center;
   gap: 6px;
   padding-top: 8px;
-  border-top: 1px solid #444;
+  border-top: 1px solid var(--border);
 }
 
 .emoji-custom label {
   font-size: 12px;
-  color: #999;
+  color: var(--text-label);
 }
 
 .emoji-custom input {
   width: 80px;
   padding: 4px 8px;
-  background: #1e1e1e;
-  border: 1px solid #555;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #e0e0e0;
+  color: var(--text);
   font-size: 14px;
 }
 
 .emoji-custom input:focus {
   outline: none;
-  border-color: #0078d4;
+  border-color: var(--accent);
 }
 
 /* Color grid */
@@ -204,22 +238,22 @@ h2 {
 
 .color-header {
   font-size: 11px;
-  color: #888;
+  color: var(--text-muted);
   text-align: center;
 }
 
 .color-label {
   font-size: 12px;
-  color: #999;
+  color: var(--text-label);
   text-align: right;
 }
 
 .color-grid input[type="color"] {
   width: 100%;
   height: 28px;
-  border: 1px solid #555;
+  border: 1px solid var(--border);
   border-radius: 4px;
-  background: #2a2a2a;
+  background: var(--surface);
   cursor: pointer;
   padding: 2px;
 }
@@ -241,16 +275,16 @@ h2 {
 
 .btn {
   padding: 8px 16px;
-  border: 1px solid #444;
+  border: 1px solid var(--border);
   border-radius: 4px;
-  background: #2a2a2a;
-  color: #e0e0e0;
+  background: var(--surface);
+  color: var(--text);
   cursor: pointer;
   font-size: 13px;
 }
 
 .btn:hover {
-  background: #333;
+  background: var(--tab-hover);
 }
 
 .btn:disabled {
@@ -259,18 +293,18 @@ h2 {
 }
 
 .btn.primary {
-  background: #0078d4;
-  border-color: #0078d4;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 
 .btn.primary:hover {
-  background: #006cbd;
+  background: var(--accent-hover);
 }
 
 .hint {
   font-size: 12px;
-  color: #888;
+  color: var(--text-muted);
   margin-left: 8px;
 }
 
@@ -278,8 +312,9 @@ h2 {
 .status-box {
   margin-top: 8px;
   padding: 10px;
-  background: #2a2a2a;
+  background: var(--surface);
   border-radius: 4px;
+  border: 1px solid var(--border);
   font-family: "Cascadia Code", "Consolas", "SF Mono", monospace;
   font-size: 12px;
   white-space: pre-line;

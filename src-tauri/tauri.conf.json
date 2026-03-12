@@ -4,28 +4,11 @@
   "identifier": "com.stclab.amaranth-check",
   "version": "0.1.0",
   "build": {
-    "frontendDist": "../src",
-    "devUrl": "http://localhost:1420"
+    "frontendDist": "../src"
   },
   "app": {
     "withGlobalTauri": true,
-    "trayIcon": {
-      "iconPath": "icons/icon.png",
-      "tooltip": "Amaranth Check",
-      "menuOnLeftClick": true
-    },
-    "windows": [
-      {
-        "label": "settings",
-        "title": "Amaranth Check - Settings",
-        "url": "index.html",
-        "width": 480,
-        "height": 400,
-        "resizable": false,
-        "visible": false,
-        "center": true
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'"
     }

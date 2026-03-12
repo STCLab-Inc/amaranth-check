@@ -137,40 +137,5 @@ document.getElementById('btnDebug').addEventListener('click', async () => {
   setTimeout(() => { hint.textContent = 'Paste to Slack for support'; }, 2000);
 });
 
-// Status display
-async function loadStatus() {
-  const status = await invoke('cmd_get_status');
-  const box = document.getElementById('statusBox');
-  if (!status) {
-    box.textContent = 'No check-in data for today';
-    return;
-  }
-  const out = status.leave || status.leaveEst;
-  let lines = [`In: ${status.come}  Out: ${out}`];
-  if (status.leaveMinutes) {
-    const h = Math.floor(status.leaveMinutes / 60);
-    const m = status.leaveMinutes % 60;
-    lines.push(`Leave: ${h > 0 ? h + 'h ' : ''}${m > 0 ? m + 'm' : ''}`);
-  }
-  if (status.isDone) {
-    if (status.overtime && status.overtime > 0) {
-      lines.push(`Overtime: +${Math.floor(status.overtime / 60)}h${status.overtime % 60}m`);
-    } else {
-      lines.push('Done!');
-    }
-  } else {
-    const h = Math.floor(status.remain / 60);
-    const m = status.remain % 60;
-    lines.push(`Remaining: ${h}h${m}m (${status.pct}%)`);
-    if (status.pct >= 0) {
-      const filled = Math.floor(status.pct / 10);
-      const empty = 10 - filled;
-      lines.push('█'.repeat(filled) + '░'.repeat(empty) + `  ${status.pct}%`);
-    }
-  }
-  box.textContent = lines.join('\n');
-}
-
 // Init
 loadConfig();
-loadStatus();
