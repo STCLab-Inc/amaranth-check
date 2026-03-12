@@ -41,7 +41,7 @@ class StatusBarController: NSObject {
         guard let cache = loadCache(),
               let come = cache.come,
               let comeMin = parseTime(come) else {
-            statusItem.button?.title = config.labelNoData
+            setStatusTitle(config.labelNoData, color: .labelColor)
             statusItem.button?.image = NSImage(systemSymbolName: "clock", accessibilityDescription: nil)
             buildMenu(come: nil, leaveEst: nil, leave: nil, remain: nil, pct: nil)
             // come이 없고 업무시간대(7~22시)면 출근 아직 안 잡힌 것 → 스크래핑
@@ -94,11 +94,14 @@ class StatusBarController: NSObject {
 
     func setStatusTitle(_ text: String, color: NSColor) {
         statusItem.button?.title = ""
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
         statusItem.button?.attributedTitle = NSAttributedString(
             string: text,
             attributes: [
                 .foregroundColor: color,
                 .font: NSFont.monospacedDigitSystemFont(ofSize: 0, weight: .medium),
+                .paragraphStyle: paragraph,
             ]
         )
     }
@@ -242,7 +245,7 @@ class StatusBarController: NSObject {
     }
 
     @objc func doRefresh() {
-        statusItem.button?.title = "..."
+        setStatusTitle("...", color: .labelColor)
         refreshCache { [weak self] in self?.updateDisplay() }
     }
 
