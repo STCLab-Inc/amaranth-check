@@ -7,6 +7,7 @@ class StatusBarController: NSObject {
     var config = loadConfig()
     let settingsController = SettingsWindowController()
     var lastNotifiedDone = false
+    var isRefreshing = false
 
     override init() {
         super.init()
@@ -43,6 +44,15 @@ class StatusBarController: NSObject {
             statusItem.button?.title = config.labelNoData
             statusItem.button?.image = NSImage(systemSymbolName: "clock", accessibilityDescription: nil)
             buildMenu(come: nil, leaveEst: nil, leave: nil, remain: nil, pct: nil)
+            // come이 없고 업무시간대(7~22시)면 출근 아직 안 잡힌 것 → 스크래핑
+            let hour = Calendar.current.component(.hour, from: Date())
+            if hour >= 7 && hour < 22 && !isRefreshing {
+                isRefreshing = true
+                refreshCache { [weak self] in
+                    self?.isRefreshing = false
+                    self?.updateDisplay()
+                }
+            }
             return
         }
 
