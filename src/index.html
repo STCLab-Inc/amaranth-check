@@ -44,7 +44,18 @@
       </div>
       <div class="field">
         <label>Done Emoji</label>
-        <input type="text" id="emojiDone" />
+        <div class="emoji-picker">
+          <span class="emoji-preview" id="emojiPreview"></span>
+          <button class="btn" id="btnEmojiChange">Change</button>
+        </div>
+        <div class="emoji-grid hidden" id="emojiGrid">
+          <div class="emoji-presets" id="emojiPresets"></div>
+          <div class="emoji-custom">
+            <label>Custom:</label>
+            <input type="text" id="emojiCustom" placeholder="Paste emoji" />
+            <button class="btn" id="btnEmojiOk">OK</button>
+          </div>
+        </div>
       </div>
       <div class="field">
         <label>Time Format</label>
@@ -59,6 +70,25 @@
           <input type="checkbox" id="showProgressBar" />
           Show Progress Bar
         </label>
+      </div>
+
+      <div class="section-title">Time Colors</div>
+      <div class="color-grid">
+        <div class="color-header"></div>
+        <div class="color-header">Early</div>
+        <div class="color-header">Mid</div>
+        <div class="color-header">Late</div>
+        <div class="color-header">Done</div>
+        <div class="color-label">Light</div>
+        <input type="color" id="colorEarly" />
+        <input type="color" id="colorMid" />
+        <input type="color" id="colorLate" />
+        <input type="color" id="colorDone" />
+        <div class="color-label">Dark</div>
+        <input type="color" id="colorEarlyDark" />
+        <input type="color" id="colorMidDark" />
+        <input type="color" id="colorLateDark" />
+        <input type="color" id="colorDoneDark" />
       </div>
     </div>
 
@@ -76,10 +106,18 @@
           Launch at Login
         </label>
       </div>
+
+      <div class="section-title">Status</div>
       <div class="field">
         <button id="btnRefresh" class="btn">Refresh Now</button>
       </div>
       <div class="status-box" id="statusBox"></div>
+
+      <div class="section-title">Troubleshooting</div>
+      <div class="field">
+        <button id="btnDebug" class="btn">Copy Debug Info</button>
+        <span class="hint" id="debugHint">Paste to Slack for support</span>
+      </div>
     </div>
 
     <div class="actions">

@@ -13,6 +13,15 @@ pub struct AppConfig {
     pub label_no_data: String,
     pub emoji_done: String,
     pub show_progress_bar: bool,
+    // Colors
+    pub color_early: String,
+    pub color_mid: String,
+    pub color_late: String,
+    pub color_done: String,
+    pub color_early_dark: String,
+    pub color_mid_dark: String,
+    pub color_late_dark: String,
+    pub color_done_dark: String,
     pub time_format: String,
     pub notify_on_done: bool,
     pub launch_at_login: bool,
@@ -27,8 +36,16 @@ impl Default for AppConfig {
             label_left: "left".into(),
             label_done: "Done".into(),
             label_no_data: "--:--".into(),
-            emoji_done: "\u{1F389}".into(), // 🎉
+            emoji_done: "\u{1F389}".into(),
             show_progress_bar: true,
+            color_early: "#34C759".into(),
+            color_mid: "#FF9500".into(),
+            color_late: "#FF3B30".into(),
+            color_done: "#34C759".into(),
+            color_early_dark: "#30D158".into(),
+            color_mid_dark: "#FFD60A".into(),
+            color_late_dark: "#FF453A".into(),
+            color_done_dark: "#30D158".into(),
             time_format: "hm".into(),
             notify_on_done: true,
             launch_at_login: true,
@@ -63,7 +80,11 @@ pub fn check_script_path() -> PathBuf {
     config_dir().join("check.mjs")
 }
 
-pub fn _session_dir() -> PathBuf {
+pub fn error_log_path() -> PathBuf {
+    config_dir().join("error.log")
+}
+
+pub fn session_dir() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_default()
         .join(".amaranth-session")
@@ -92,7 +113,6 @@ pub fn load_cache() -> Option<AttendanceCache> {
     let path = cache_file();
     let data = fs::read_to_string(&path).ok()?;
     let cache: AttendanceCache = serde_json::from_str(&data).ok()?;
-    // Only return if today's date
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
     if cache.date == today {
         Some(cache)

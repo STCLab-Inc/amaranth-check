@@ -104,6 +104,136 @@ h2 {
   height: 16px;
 }
 
+/* Section title */
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ccc;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #333;
+}
+
+/* Emoji picker */
+.emoji-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emoji-preview {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.emoji-grid {
+  margin-top: 8px;
+  padding: 10px;
+  background: #2a2a2a;
+  border-radius: 6px;
+  border: 1px solid #444;
+}
+
+.emoji-grid.hidden {
+  display: none;
+}
+
+.emoji-presets {
+  display: grid;
+  grid-template-columns: repeat(6, 36px);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.emoji-presets button {
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.emoji-presets button:hover {
+  background: #444;
+}
+
+.emoji-presets button.selected {
+  background: rgba(0, 120, 212, 0.3);
+  border-color: #0078d4;
+}
+
+.emoji-custom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #444;
+}
+
+.emoji-custom label {
+  font-size: 12px;
+  color: #999;
+}
+
+.emoji-custom input {
+  width: 80px;
+  padding: 4px 8px;
+  background: #1e1e1e;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 14px;
+}
+
+.emoji-custom input:focus {
+  outline: none;
+  border-color: #0078d4;
+}
+
+/* Color grid */
+.color-grid {
+  display: grid;
+  grid-template-columns: 50px repeat(4, 1fr);
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.color-header {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+}
+
+.color-label {
+  font-size: 12px;
+  color: #999;
+  text-align: right;
+}
+
+.color-grid input[type="color"] {
+  width: 100%;
+  height: 28px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #2a2a2a;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.color-grid input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-grid input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+/* Buttons */
 .actions {
   margin-top: 16px;
   text-align: right;
@@ -123,6 +253,11 @@ h2 {
   background: #333;
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn.primary {
   background: #0078d4;
   border-color: #0078d4;
@@ -133,12 +268,19 @@ h2 {
   background: #006cbd;
 }
 
+.hint {
+  font-size: 12px;
+  color: #888;
+  margin-left: 8px;
+}
+
+/* Status box */
 .status-box {
-  margin-top: 12px;
+  margin-top: 8px;
   padding: 10px;
   background: #2a2a2a;
   border-radius: 4px;
-  font-family: "Cascadia Code", "Consolas", monospace;
+  font-family: "Cascadia Code", "Consolas", "SF Mono", monospace;
   font-size: 12px;
   white-space: pre-line;
   min-height: 60px;

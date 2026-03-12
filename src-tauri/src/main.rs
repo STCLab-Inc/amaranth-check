@@ -6,6 +6,7 @@ mod scraper;
 mod tray;
 
 use std::sync::{Arc, Mutex};
+
 pub struct AppState {
     pub config: Mutex<config::AppConfig>,
     pub cache: Mutex<Option<config::AttendanceCache>>,
@@ -61,6 +62,7 @@ fn main() {
             cmd_save_config,
             cmd_get_status,
             cmd_refresh,
+            cmd_debug_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -88,4 +90,41 @@ async fn cmd_refresh(app: tauri::AppHandle, _state: tauri::State<'_, Arc<AppStat
     scraper::refresh_cache(&app).await;
     tray::update_tray(&app);
     Ok(())
+}
+
+#[tauri::command]
+fn cmd_debug_info(state: tauri::State<'_, Arc<AppState>>) -> String {
+    let cache_str = std::fs::read_to_string(config::cache_file())
+        .unwrap_or_else(|_| "(no cache)".into());
+
+    let error_log: String = std::fs::read_to_string(config::error_log_path())
+        .map(|s| {
+            if s.is_empty() {
+                "(no errors)".into()
+            } else {
+                s.chars().rev().take(500).collect::<String>().chars().rev().collect()
+            }
+        })
+        .unwrap_or_else(|_| "(no errors)".into());
+
+    let has_session = config::session_dir().exists();
+    let has_script = config::check_script_path().exists();
+    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let os = std::env::consts::OS;
+    let arch = std::env::consts::ARCH;
+
+    let cfg = state.config.lock().unwrap();
+
+    format!(
+        "```\namaranth-check debug\nversion: {} (tauri)\nplatform: {}-{}\ndate: {}\ncache: {}\nsession: {}\nscript: {}\nuser: {}\nerror.log: {}\n```",
+        env!("CARGO_PKG_VERSION"),
+        os,
+        arch,
+        today,
+        cache_str.trim(),
+        has_session,
+        has_script,
+        if cfg.user_id.is_empty() { "(not set)" } else { &cfg.user_id },
+        error_log.trim()
+    )
 }

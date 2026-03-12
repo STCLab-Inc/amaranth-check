@@ -11,8 +11,61 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // Field IDs matching config keys
-const textFields = ['company', 'userId', 'password', 'labelLeft', 'labelDone', 'emojiDone'];
+const textFields = ['company', 'userId', 'password', 'labelLeft', 'labelDone'];
 const checkFields = ['showProgressBar', 'notifyOnDone', 'launchAtLogin'];
+const colorFields = [
+  'colorEarly', 'colorMid', 'colorLate', 'colorDone',
+  'colorEarlyDark', 'colorMidDark', 'colorLateDark', 'colorDoneDark'
+];
+
+// Emoji picker
+const emojiPresets = [
+  '🎉', '✅', '🔥', '🏠', '👋', '🍺',
+  '🚀', '⭐', '💪', '🎯', '✨', '🌈',
+  '☕', '🍕', '😎', '💤', '🏃', '🎶',
+];
+
+let currentEmoji = '🎉';
+
+function initEmojiPicker() {
+  const grid = document.getElementById('emojiPresets');
+  grid.innerHTML = '';
+  emojiPresets.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.textContent = emoji;
+    btn.className = emoji === currentEmoji ? 'selected' : '';
+    btn.addEventListener('click', () => {
+      currentEmoji = emoji;
+      updateEmojiDisplay();
+      document.getElementById('emojiGrid').classList.add('hidden');
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function updateEmojiDisplay() {
+  document.getElementById('emojiPreview').textContent = currentEmoji;
+  // Update selected state
+  document.querySelectorAll('#emojiPresets button').forEach(btn => {
+    btn.className = btn.textContent === currentEmoji ? 'selected' : '';
+  });
+}
+
+document.getElementById('btnEmojiChange').addEventListener('click', () => {
+  const grid = document.getElementById('emojiGrid');
+  grid.classList.toggle('hidden');
+  initEmojiPicker();
+});
+
+document.getElementById('btnEmojiOk').addEventListener('click', () => {
+  const custom = document.getElementById('emojiCustom').value.trim();
+  if (custom) {
+    currentEmoji = custom;
+    updateEmojiDisplay();
+    document.getElementById('emojiCustom').value = '';
+    document.getElementById('emojiGrid').classList.add('hidden');
+  }
+});
 
 // Load config into form
 async function loadConfig() {
@@ -25,12 +78,17 @@ async function loadConfig() {
     const el = document.getElementById(id);
     if (el) el.checked = !!config[id];
   });
+  colorFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = config[id] || '#000000';
+  });
   document.getElementById('timeFormat').value = config.timeFormat || 'hm';
-  document.getElementById('labelLeft').value = config.labelLeft || 'left';
+  currentEmoji = config.emojiDone || '🎉';
+  updateEmojiDisplay();
 }
 
-// Save config
-document.getElementById('btnSave').addEventListener('click', async () => {
+// Collect form into config object
+function collectConfig() {
   const config = {};
   textFields.forEach(id => {
     config[id] = document.getElementById(id).value;
@@ -38,18 +96,18 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   checkFields.forEach(id => {
     config[id] = document.getElementById(id).checked;
   });
+  colorFields.forEach(id => {
+    config[id] = document.getElementById(id).value;
+  });
   config.timeFormat = document.getElementById('timeFormat').value;
-  // Keep color defaults (not editable in Windows version yet)
+  config.emojiDone = currentEmoji;
   config.labelNoData = '--:--';
-  config.colorEarly = '#34C759';
-  config.colorMid = '#FF9500';
-  config.colorLate = '#FF3B30';
-  config.colorDone = '#34C759';
-  config.colorEarlyDark = '#30D158';
-  config.colorMidDark = '#FFD60A';
-  config.colorLateDark = '#FF453A';
-  config.colorDoneDark = '#30D158';
+  return config;
+}
 
+// Save config
+document.getElementById('btnSave').addEventListener('click', async () => {
+  const config = collectConfig();
   await invoke('cmd_save_config', { newConfig: config });
   document.getElementById('btnSave').textContent = 'Saved!';
   setTimeout(() => {
@@ -68,6 +126,15 @@ document.getElementById('btnRefresh').addEventListener('click', async () => {
     document.getElementById('btnRefresh').textContent = 'Refresh Now';
     document.getElementById('btnRefresh').disabled = false;
   }
+});
+
+// Debug info
+document.getElementById('btnDebug').addEventListener('click', async () => {
+  const debug = await invoke('cmd_debug_info');
+  await navigator.clipboard.writeText(debug);
+  const hint = document.getElementById('debugHint');
+  hint.textContent = 'Copied!';
+  setTimeout(() => { hint.textContent = 'Paste to Slack for support'; }, 2000);
 });
 
 // Status display
