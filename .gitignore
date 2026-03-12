@@ -1,3 +1,5 @@
 .build/
 .swiftpm/
 *.tar.gz
+windows/src-tauri/target/
+windows/node_modules/

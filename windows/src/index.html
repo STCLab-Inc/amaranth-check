@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amaranth Check - Settings</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Settings</h2>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="account">Account</button>
+      <button class="tab" data-tab="appearance">Appearance</button>
+      <button class="tab" data-tab="general">General</button>
+    </div>
+
+    <!-- Account Tab -->
+    <div class="tab-content active" id="tab-account">
+      <div class="field">
+        <label>Company Code</label>
+        <input type="text" id="company" />
+      </div>
+      <div class="field">
+        <label>User ID</label>
+        <input type="text" id="userId" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" />
+      </div>
+    </div>
+
+    <!-- Appearance Tab -->
+    <div class="tab-content" id="tab-appearance">
+      <div class="field">
+        <label>Remaining Label</label>
+        <input type="text" id="labelLeft" />
+      </div>
+      <div class="field">
+        <label>Done Label</label>
+        <input type="text" id="labelDone" />
+      </div>
+      <div class="field">
+        <label>Done Emoji</label>
+        <input type="text" id="emojiDone" />
+      </div>
+      <div class="field">
+        <label>Time Format</label>
+        <select id="timeFormat">
+          <option value="hm">8h32m</option>
+          <option value="m">512m</option>
+          <option value="colon">8:32</option>
+        </select>
+      </div>
+      <div class="field checkbox">
+        <label>
+          <input type="checkbox" id="showProgressBar" />
+          Show Progress Bar
+        </label>
+      </div>
+    </div>
+
+    <!-- General Tab -->
+    <div class="tab-content" id="tab-general">
+      <div class="field checkbox">
+        <label>
+          <input type="checkbox" id="notifyOnDone" />
+          Notify when done
+        </label>
+      </div>
+      <div class="field checkbox">
+        <label>
+          <input type="checkbox" id="launchAtLogin" />
+          Launch at Login
+        </label>
+      </div>
+      <div class="field">
+        <button id="btnRefresh" class="btn">Refresh Now</button>
+      </div>
+      <div class="status-box" id="statusBox"></div>
+    </div>
+
+    <div class="actions">
+      <button id="btnSave" class="btn primary">Save</button>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
