@@ -1,5 +1,5 @@
 [package]
-name = "amaranth-check-win"
+name = "amaranth-check-tauri"
 version = "0.1.0"
 edition = "2021"
 

@@ -16,11 +16,11 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Build
-        working-directory: windows/src-tauri
+        working-directory: src-tauri
         run: cargo build --release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: amaranth-check-windows-x64
-          path: windows/src-tauri/target/release/amaranth-check-win.exe
+          path: src-tauri/target/release/amaranth-check-tauri.exe
