@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: swift build -c release
+
+      - name: Package
+        id: package
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          cp .build/release/amaranth-check .
+          tar czf "amaranth-check-${VERSION}-arm64.tar.gz" amaranth-check
+          SHA256=$(shasum -a 256 "amaranth-check-${VERSION}-arm64.tar.gz" | awk '{print $1}')
+          echo "SHA256=${SHA256}" >> "$GITHUB_OUTPUT"
+          echo "ASSET=amaranth-check-${VERSION}-arm64.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            "${{ steps.package.outputs.ASSET }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dispatch homebrew-stclab cask update
+        run: |
+          gh api repos/STCLab-Inc/homebrew-stclab/dispatches \
+            -f event_type=update-cask \
+            -f "client_payload[version]=${{ steps.version.outputs.VERSION }}" \
+            -f "client_payload[sha256]=${{ steps.package.outputs.SHA256 }}"
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_PAT }}
+
+      - name: Notify Slack
+        if: success()
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "*amaranth-check ${{ github.ref_name }}* released\n<${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}|View Release>"
+            }
