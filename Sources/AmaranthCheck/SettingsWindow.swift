@@ -158,8 +158,7 @@ struct SettingsView: View {
             errorLog = "(no errors)"
         }
 
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
-        let brewVersion = (try? String(contentsOfFile: "/opt/homebrew/bin/amaranth-check", encoding: .ascii)) != nil ? "homebrew" : "local"
+        let version = appVersion
 
         let hasNode = fm.fileExists(atPath: "/usr/local/bin/node") || fm.fileExists(atPath: "/opt/homebrew/bin/node")
         let hasSession = fm.fileExists(atPath: AppPaths.sessionDir)
@@ -168,7 +167,7 @@ struct SettingsView: View {
         return """
         ```
         amaranth-check debug
-        version: \(version) (\(brewVersion))
+        version: \(version)
         date: \(formatDate(Date()))
         cache: \(cacheStr)
         node: \(hasNode)
