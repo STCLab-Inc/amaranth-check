@@ -10,8 +10,19 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  macos:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v6
-      - run: swift build -c release
+      - name: Build Swift
+        working-directory: macos
+        run: swift build -c release
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build Tauri
+        working-directory: windows/src-tauri
+        run: cargo build --release

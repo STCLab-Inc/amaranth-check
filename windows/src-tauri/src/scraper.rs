@@ -17,7 +17,7 @@ fn write_check_script(cfg: &config::AppConfig) {
         );
     }
 
-    let script = include_str!("../../scripts/check.template.mjs")
+    let script = include_str!("../../../scripts/check.template.mjs")
         .replace("__COMPANY__", &serde_json::to_string(&cfg.company).unwrap_or_default())
         .replace("__USER_ID__", &serde_json::to_string(&cfg.user_id).unwrap_or_default())
         .replace("__PASSWORD__", &serde_json::to_string(&cfg.password).unwrap_or_default());

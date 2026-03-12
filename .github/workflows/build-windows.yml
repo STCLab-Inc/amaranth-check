@@ -1,10 +1,12 @@
-name: Build Windows (manual)
+name: Release Windows
 
 on:
+  push:
+    tags: ["windows-v*"]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -16,11 +18,22 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Build
-        working-directory: src-tauri
+        working-directory: windows/src-tauri
         run: cargo build --release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: amaranth-check-windows-x64
-          path: src-tauri/target/release/amaranth-check-tauri.exe
+          path: windows/src-tauri/target/release/amaranth-check-tauri.exe
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/windows-v')
+        run: |
+          $VERSION = "${{ github.ref_name }}" -replace "^windows-v", ""
+          gh release create "${{ github.ref_name }}" `
+            "windows/src-tauri/target/release/amaranth-check-tauri.exe" `
+            --title "Windows $VERSION" `
+            --notes "Windows release $VERSION"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

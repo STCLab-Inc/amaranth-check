@@ -1,5 +1,5 @@
 .build/
 .swiftpm/
 *.tar.gz
-src-tauri/target/
+windows/src-tauri/target/
 node_modules/
