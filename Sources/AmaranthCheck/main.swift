@@ -78,7 +78,12 @@ if args.contains("--status") {
         let now = cal.component(.hour, from: Date()) * 60 + cal.component(.minute, from: Date())
         let remain = leaveMin - now
         if remain <= 0 {
-            print("In: \(come)  Out: \(leaveEst)  \(config.emojiDone) \(config.labelDone)")
+            let overtime = -remain
+            if overtime > 0 {
+                print("In: \(come)  Out: \(leaveEst)  \(config.emojiDone) +\(overtime / 60)h\(overtime % 60)m")
+            } else {
+                print("In: \(come)  Out: \(leaveEst)  \(config.emojiDone) \(config.labelDone)")
+            }
         } else {
             print("In: \(come)  Out: \(leaveEst)  \(remain / 60)h\(remain % 60)m \(config.labelLeft)")
         }

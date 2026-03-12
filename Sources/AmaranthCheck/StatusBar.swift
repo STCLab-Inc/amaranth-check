@@ -76,14 +76,20 @@ class StatusBarController: NSObject {
         let pct = requiredMin > 0 ? min(100, max(0, elapsed * 100 / requiredMin)) : 100
 
         if remain <= 0 {
-            setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
+            let overtime = -remain
+            if overtime > 0 {
+                let otStr = formatRemain(overtime, format: config.timeFormat)
+                setStatusTitle("\(config.emojiDone) +\(otStr)", color: doneColor())
+            } else {
+                setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
+            }
             notifyDoneIfNeeded()
         } else {
             let timeStr = formatRemain(remain, format: config.timeFormat)
             setStatusTitle("\(timeStr) \(config.labelLeft)", color: pctColor(pct))
         }
 
-        buildMenu(come: come, leaveEst: leaveEst, leave: nil, remain: remain > 0 ? remain : nil, pct: pct, leaveMinutes: cache.leaveMinutes)
+        buildMenu(come: come, leaveEst: leaveEst, leave: nil, remain: remain > 0 ? remain : nil, pct: pct, leaveMinutes: cache.leaveMinutes, overtime: remain < 0 ? -remain : nil)
     }
 
     func setStatusTitle(_ text: String, color: NSColor) {
@@ -119,7 +125,7 @@ class StatusBarController: NSObject {
 
     // MARK: - Menu
 
-    func buildMenu(come: String?, leaveEst: String?, leave: String?, remain: Int?, pct: Int?, leaveMinutes: Int? = nil) {
+    func buildMenu(come: String?, leaveEst: String?, leave: String?, remain: Int?, pct: Int?, leaveMinutes: Int? = nil, overtime: Int? = nil) {
         let menu = NSMenu()
 
         // 날짜
@@ -168,6 +174,18 @@ class StatusBarController: NSObject {
                 attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
             )
             menu.addItem(barItem)
+        }
+
+        // 초과근무
+        if let ot = overtime, ot > 0 {
+            let otStr = formatRemain(ot, format: config.timeFormat)
+            let otItem = NSMenuItem(title: "Overtime: +\(otStr)", action: nil, keyEquivalent: "")
+            otItem.isEnabled = false
+            otItem.attributedTitle = NSAttributedString(
+                string: otItem.title,
+                attributes: [.font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)]
+            )
+            menu.addItem(otItem)
         }
 
         menu.addItem(.separator())
