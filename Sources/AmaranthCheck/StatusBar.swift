@@ -39,11 +39,10 @@ class StatusBarController: NSObject {
         config = loadConfig()
 
         guard let cache = loadCache(),
-              let come = cache.come,
-              let comeMin = parseTime(come) else {
+              let status = calculateWorkStatus(cache: cache) else {
             setStatusTitle(config.labelNoData, color: .labelColor)
             statusItem.button?.image = NSImage(systemSymbolName: "clock", accessibilityDescription: nil)
-            buildMenu(come: nil, leaveEst: nil, leave: nil, remain: nil, pct: nil)
+            buildMenu(status: nil)
             // come이 없고 업무시간대(7~22시)면 출근 아직 안 잡힌 것 → 스크래핑
             let hour = Calendar.current.component(.hour, from: Date())
             if hour >= 7 && hour < 22 && !isRefreshing {
@@ -57,39 +56,23 @@ class StatusBarController: NSObject {
         }
 
         statusItem.button?.image = nil
-        let effectiveStart = max(comeMin, 480)
-        let requiredMin = 540 - (cache.leaveMinutes ?? 0)
-        let leaveMin = effectiveStart + requiredMin
-        let leaveEst = formatMinutes(leaveMin)
 
-        if let leave = cache.leave, !leave.isEmpty {
+        if status.leave != nil {
             setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
-            buildMenu(come: come, leaveEst: leaveEst, leave: leave, remain: nil, pct: 100, leaveMinutes: cache.leaveMinutes)
             notifyDoneIfNeeded()
-            return
-        }
-
-        let cal = Calendar.current
-        let nowMin = cal.component(.hour, from: Date()) * 60 + cal.component(.minute, from: Date())
-        let remain = leaveMin - nowMin
-        let elapsed = nowMin - effectiveStart
-        let pct = requiredMin > 0 ? min(100, max(0, elapsed * 100 / requiredMin)) : 100
-
-        if remain <= 0 {
-            let overtime = -remain
-            if overtime > 0 {
-                let otStr = formatRemain(overtime, format: config.timeFormat)
-                setStatusTitle("\(config.emojiDone) +\(otStr)", color: doneColor())
-            } else {
-                setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
-            }
+        } else if let overtime = status.overtime, overtime > 0 {
+            let otStr = formatRemain(overtime, format: config.timeFormat)
+            setStatusTitle("\(config.emojiDone) +\(otStr)", color: doneColor())
+            notifyDoneIfNeeded()
+        } else if status.remain <= 0 {
+            setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
             notifyDoneIfNeeded()
         } else {
-            let timeStr = formatRemain(remain, format: config.timeFormat)
-            setStatusTitle("\(timeStr) \(config.labelLeft)", color: pctColor(pct))
+            let timeStr = formatRemain(status.remain, format: config.timeFormat)
+            setStatusTitle("\(timeStr) \(config.labelLeft)", color: pctColor(status.pct))
         }
 
-        buildMenu(come: come, leaveEst: leaveEst, leave: nil, remain: remain > 0 ? remain : nil, pct: pct, leaveMinutes: cache.leaveMinutes, overtime: remain < 0 ? -remain : nil)
+        buildMenu(status: status)
     }
 
     func setStatusTitle(_ text: String, color: NSColor) {
@@ -128,7 +111,7 @@ class StatusBarController: NSObject {
 
     // MARK: - Menu
 
-    func buildMenu(come: String?, leaveEst: String?, leave: String?, remain: Int?, pct: Int?, leaveMinutes: Int? = nil, overtime: Int? = nil) {
+    func buildMenu(status: WorkStatus?) {
         let menu = NSMenu()
 
         // 날짜
@@ -137,15 +120,9 @@ class StatusBarController: NSObject {
         menu.addItem(dateItem)
 
         // 출퇴근 시간
-        if let come = come {
-            let outTime = leave ?? leaveEst ?? "–"
-            let timeItem = NSMenuItem(title: "In: \(come)  Out: \(outTime)", action: nil, keyEquivalent: "")
-            timeItem.isEnabled = false
-            timeItem.attributedTitle = NSAttributedString(
-                string: timeItem.title,
-                attributes: [.font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)]
-            )
-            menu.addItem(timeItem)
+        if let s = status {
+            let outTime = s.leave ?? s.leaveEst
+            addMonoItem(menu, "In: \(s.come)  Out: \(outTime)")
         } else {
             let noData = NSMenuItem(title: "No check-in today", action: nil, keyEquivalent: "")
             noData.isEnabled = false
@@ -153,42 +130,24 @@ class StatusBarController: NSObject {
         }
 
         // 시간연차
-        if let lm = leaveMinutes, lm > 0 {
+        if let lm = status?.leaveMinutes, lm > 0 {
             let h = lm / 60, m = lm % 60
             let timeStr = h > 0 && m > 0 ? "\(h)h \(m)m" : h > 0 ? "\(h)h" : "\(m)m"
-            let leaveItem = NSMenuItem(title: "Leave: \(timeStr)", action: nil, keyEquivalent: "")
-            leaveItem.isEnabled = false
-            leaveItem.attributedTitle = NSAttributedString(
-                string: leaveItem.title,
-                attributes: [.font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)]
-            )
-            menu.addItem(leaveItem)
+            addMonoItem(menu, "Leave: \(timeStr)")
         }
 
         // 진행바
-        if config.showProgressBar, let pct = pct {
+        if config.showProgressBar, let pct = status?.pct {
             let filled = pct / 10
             let empty = 10 - filled
             let bar = String(repeating: "█", count: filled) + String(repeating: "░", count: empty)
-            let barItem = NSMenuItem(title: "\(bar)  \(pct)%", action: nil, keyEquivalent: "")
-            barItem.isEnabled = false
-            barItem.attributedTitle = NSAttributedString(
-                string: barItem.title,
-                attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
-            )
-            menu.addItem(barItem)
+            addMonoItem(menu, "\(bar)  \(pct)%", size: 12)
         }
 
         // 초과근무
-        if let ot = overtime, ot > 0 {
+        if let ot = status?.overtime, ot > 0 {
             let otStr = formatRemain(ot, format: config.timeFormat)
-            let otItem = NSMenuItem(title: "Overtime: +\(otStr)", action: nil, keyEquivalent: "")
-            otItem.isEnabled = false
-            otItem.attributedTitle = NSAttributedString(
-                string: otItem.title,
-                attributes: [.font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)]
-            )
-            menu.addItem(otItem)
+            addMonoItem(menu, "Overtime: +\(otStr)")
         }
 
         menu.addItem(.separator())
@@ -212,6 +171,16 @@ class StatusBarController: NSObject {
         menu.addItem(quitItem)
 
         statusItem.menu = menu
+    }
+
+    func addMonoItem(_ menu: NSMenu, _ title: String, size: CGFloat = 13) {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        item.attributedTitle = NSAttributedString(
+            string: title,
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: size, weight: .regular)]
+        )
+        menu.addItem(item)
     }
 
     func dateString() -> String {

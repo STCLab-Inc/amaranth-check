@@ -139,7 +139,6 @@ struct SettingsView: View {
 
     func collectDebugInfo() -> String {
         let fm = FileManager.default
-        let cache = loadCache()
         let cacheStr: String
         if let data = fm.contents(atPath: AppPaths.cacheFile),
            let json = String(data: data, encoding: .utf8) {

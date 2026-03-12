@@ -62,31 +62,20 @@ if args.contains("--setup") {
 }
 
 if args.contains("--status") {
-    guard let cache = loadCache(), let come = cache.come, let comeMin = parseTime(come) else {
+    guard let cache = loadCache(), let s = calculateWorkStatus(cache: cache) else {
         print("No check-in data for today")
         exit(0)
     }
     let config = loadConfig()
-    let effectiveStart = max(comeMin, 480)
-    let requiredMin = 540 - (cache.leaveMinutes ?? 0)
-    let leaveMin = effectiveStart + requiredMin
-    let leaveEst = formatMinutes(leaveMin)
-    if let leave = cache.leave, !leave.isEmpty {
-        print("In: \(come)  Out: \(leave)  \(config.emojiDone) \(config.labelDone)")
+    let outTime = s.leave ?? s.leaveEst
+    if s.leave != nil {
+        print("In: \(s.come)  Out: \(outTime)  \(config.emojiDone) \(config.labelDone)")
+    } else if let ot = s.overtime, ot > 0 {
+        print("In: \(s.come)  Out: \(outTime)  \(config.emojiDone) +\(ot / 60)h\(ot % 60)m")
+    } else if s.remain <= 0 {
+        print("In: \(s.come)  Out: \(outTime)  \(config.emojiDone) \(config.labelDone)")
     } else {
-        let cal = Calendar.current
-        let now = cal.component(.hour, from: Date()) * 60 + cal.component(.minute, from: Date())
-        let remain = leaveMin - now
-        if remain <= 0 {
-            let overtime = -remain
-            if overtime > 0 {
-                print("In: \(come)  Out: \(leaveEst)  \(config.emojiDone) +\(overtime / 60)h\(overtime % 60)m")
-            } else {
-                print("In: \(come)  Out: \(leaveEst)  \(config.emojiDone) \(config.labelDone)")
-            }
-        } else {
-            print("In: \(come)  Out: \(leaveEst)  \(remain / 60)h\(remain % 60)m \(config.labelLeft)")
-        }
+        print("In: \(s.come)  Out: \(outTime)  \(s.remain / 60)h\(s.remain % 60)m \(config.labelLeft)")
     }
     exit(0)
 }

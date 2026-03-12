@@ -181,21 +181,3 @@ func refreshCache(completion: (() -> Void)? = nil) {
     }
 }
 
-// MARK: - Helpers
-
-func runShell(_ command: String) {
-    let task = Process()
-    task.executableURL = URL(fileURLWithPath: "/bin/bash")
-    task.arguments = ["-lc", command]
-    task.standardOutput = FileHandle.nullDevice
-    task.standardError = FileHandle.nullDevice
-    try? task.run()
-    task.waitUntilExit()
-}
-
-func jsonString(_ s: String) -> String {
-    let escaped = s
-        .replacingOccurrences(of: "\\", with: "\\\\")
-        .replacingOccurrences(of: "\"", with: "\\\"")
-    return "\"\(escaped)\""
-}
