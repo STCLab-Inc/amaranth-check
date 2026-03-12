@@ -50,6 +50,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_PAT }}
 
+      - name: Get release notes
+        id: notes
+        run: |
+          NOTES=$(gh release view "${{ github.ref_name }}" --json body -q .body)
+          # Convert markdown list to plain text for Slack
+          NOTES=$(echo "$NOTES" | sed 's/^\* /• /' | sed '/^##/d' | sed '/^\*\*Full/d' | sed '/^$/d')
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "NOTES<<$EOF" >> "$GITHUB_OUTPUT"
+          echo "$NOTES" >> "$GITHUB_OUTPUT"
+          echo "$EOF" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Notify Slack
         if: success()
         uses: slackapi/slack-github-action@v2
@@ -58,5 +71,5 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": "*amaranth-check ${{ github.ref_name }}* released\n<${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}|View Release>"
+              "text": "*amaranth-check ${{ github.ref_name }}* released\n\n${{ steps.notes.outputs.NOTES }}\n\n<${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}|View Release>"
             }
