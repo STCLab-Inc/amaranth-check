@@ -1,6 +1,6 @@
 import Foundation
 
-struct AppConfig: Codable {
+struct AppConfig: Codable, Equatable {
     var company: String
     var userId: String
     var password: String
