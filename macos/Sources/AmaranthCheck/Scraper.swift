@@ -19,12 +19,9 @@ func ensureScraperInstalled() {
     // node_modules
     let nodeModules = AppPaths.configDir + "/node_modules"
     if !fm.fileExists(atPath: nodeModules) {
-        if let nodePath = getNodePath() {
-            let binDir = (nodePath as NSString).deletingLastPathComponent
-            runShell("cd \(AppPaths.configDir) && \(binDir)/npm install playwright 2>/dev/null && \(binDir)/npx playwright install chromium 2>/dev/null")
-        } else {
-            runShell("cd \(AppPaths.configDir) && npm install playwright 2>/dev/null && npx playwright install chromium 2>/dev/null")
-        }
+        guard let nodePath = getNodePath() else { return }
+        let binDir = (nodePath as NSString).deletingLastPathComponent
+        runShell("cd \(AppPaths.configDir) && \(binDir)/npm install playwright 2>/dev/null && \(binDir)/npx playwright install chromium 2>/dev/null")
     }
 }
 
@@ -181,7 +178,17 @@ func writeCheckScript() {
 func refreshCache(completion: (() -> Void)? = nil) {
     DispatchQueue.global().async {
         writeCheckScript()
-        let nodeBin = getNodePath() ?? "node"
+        guard let nodeBin = getNodePath() else {
+            let msg = "[\(formatDate(Date()))] node not found\n"
+            if let data = msg.data(using: .utf8) {
+                let h = FileHandle(forWritingAtPath: AppPaths.configDir + "/error.log")
+                h?.seekToEndOfFile()
+                h?.write(data)
+                h?.closeFile()
+            }
+            DispatchQueue.main.async { completion?() }
+            return
+        }
         runShell("cd \(AppPaths.configDir) && \(nodeBin) check.mjs 2>>\(AppPaths.configDir)/error.log")
         DispatchQueue.main.async { completion?() }
     }
