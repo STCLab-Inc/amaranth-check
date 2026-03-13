@@ -49,7 +49,7 @@ jobs:
           echo "COMMITS<<$EOF" >> "$GITHUB_OUTPUT"
           echo "$COMMITS" >> "$GITHUB_OUTPUT"
           echo "$EOF" >> "$GITHUB_OUTPUT"
-          SLACK_COMMITS=$(echo "$COMMITS" | sed ':a;N;$!ba;s/\n/\\n/g')
+          SLACK_COMMITS=$(echo "$COMMITS" | tr '\n' '§' | sed 's/§/\\n/g')
           echo "SLACK_COMMITS=$SLACK_COMMITS" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
