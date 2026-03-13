@@ -105,14 +105,16 @@ if config.userId.isEmpty {
 
 // --foreground가 없으면 자동 fork해서 터미널을 즉시 반환
 if !args.contains("--foreground") {
-    // 이미 실행 중이면 죽이고 새로 시작 (업데이트 반영)
-    let kill = Process()
-    kill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-    kill.arguments = ["-f", "amaranth-check --foreground"]
-    kill.standardOutput = FileHandle.nullDevice
-    kill.standardError = FileHandle.nullDevice
-    try? kill.run()
-    kill.waitUntilExit()
+    // 이미 실행 중이면 자식 프로세스까지 죽이고 새로 시작 (업데이트 반영)
+    for pattern in ["amaranth-check --foreground", "node check.mjs", "amaranth-session.*chrome"] {
+        let kill = Process()
+        kill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        kill.arguments = ["-f", pattern]
+        kill.standardOutput = FileHandle.nullDevice
+        kill.standardError = FileHandle.nullDevice
+        try? kill.run()
+        kill.waitUntilExit()
+    }
 
     let execPath = ProcessInfo.processInfo.arguments[0]
     let task = Process()
