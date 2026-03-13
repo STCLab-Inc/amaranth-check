@@ -132,6 +132,7 @@ func writeCheckScript() {
 
         leaveMinutes = await page.evaluate(() => {
           const grids = document.querySelectorAll("[id^=grid_]");
+          let total = 0;
           for (const g of grids) {
             if (!g.gridView) continue;
             try {
@@ -149,12 +150,12 @@ func writeCheckScript() {
                   const sm = parseInt(r.startTm.substring(2, 4), 10);
                   const eh = parseInt(r.endTm.substring(0, 2), 10);
                   const em = parseInt(r.endTm.substring(2, 4), 10);
-                  return (eh * 60 + em) - (sh * 60 + sm);
+                  total += (eh * 60 + em) - (sh * 60 + sm);
                 }
               }
             } catch {}
           }
-          return null;
+          return total > 0 ? total : null;
         });
       }
 
