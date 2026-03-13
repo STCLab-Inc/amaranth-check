@@ -21,7 +21,7 @@ func ensureScraperInstalled() {
     if !fm.fileExists(atPath: nodeModules) {
         guard let nodePath = getNodePath() else { return }
         let binDir = (nodePath as NSString).deletingLastPathComponent
-        runShell("cd \(AppPaths.configDir) && \(binDir)/npm install playwright 2>/dev/null && \(binDir)/npx playwright install chromium 2>/dev/null")
+        runShell("export PATH=\"\(binDir):$PATH\" && cd \(AppPaths.configDir) && \(binDir)/npm install playwright 2>/dev/null && \(binDir)/npx playwright install chromium 2>/dev/null")
     }
 }
 
@@ -189,7 +189,8 @@ func refreshCache(completion: (() -> Void)? = nil) {
             DispatchQueue.main.async { completion?() }
             return
         }
-        runShell("cd \(AppPaths.configDir) && \(nodeBin) check.mjs 2>>\(AppPaths.configDir)/error.log")
+        let binDir = (nodeBin as NSString).deletingLastPathComponent
+        runShell("export PATH=\"\(binDir):$PATH\" && cd \(AppPaths.configDir) && \(nodeBin) check.mjs 2>>\(AppPaths.configDir)/error.log")
         DispatchQueue.main.async { completion?() }
     }
 }
