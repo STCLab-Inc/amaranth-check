@@ -159,7 +159,8 @@ struct SettingsView: View {
 
         let version = appVersion
 
-        let hasNode = fm.fileExists(atPath: "/usr/local/bin/node") || fm.fileExists(atPath: "/opt/homebrew/bin/node")
+        let nodeInfo = findBestNode()
+        let nodeStr = nodeInfo.map { "\($0.version) (\($0.path))" } ?? "not found (18+ required)"
         let hasSession = fm.fileExists(atPath: AppPaths.sessionDir)
         let hasScript = fm.fileExists(atPath: AppPaths.checkScript)
 
@@ -169,7 +170,7 @@ struct SettingsView: View {
         version: \(version)
         date: \(formatDate(Date()))
         cache: \(cacheStr)
-        node: \(hasNode)
+        node: \(nodeStr)
         session: \(hasSession)
         script: \(hasScript)
         error.log: \(errorLog)

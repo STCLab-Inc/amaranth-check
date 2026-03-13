@@ -5,19 +5,19 @@ import AppKit
 let args = CommandLine.arguments
 
 if args.contains("--setup") {
-    // node 체크
-    let nodeCheck = Process()
-    nodeCheck.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    nodeCheck.arguments = ["node", "--version"]
-    nodeCheck.standardOutput = FileHandle.nullDevice
-    nodeCheck.standardError = FileHandle.nullDevice
-    try? nodeCheck.run()
-    nodeCheck.waitUntilExit()
-    if nodeCheck.terminationStatus != 0 {
-        print("Error: Node.js is required but not found.")
-        print("Install it with: brew install node (or nvm/mise)")
+    // node 체크 (18+ 필요)
+    guard let node = findBestNode() else {
+        print("Error: Node.js 18+ is required but not found.")
+        // 혹시 낮은 버전이 있는지 체크
+        for path in ["/opt/homebrew/bin/node", "/usr/local/bin/node"] {
+            if let info = getNodeVersionAt(path) {
+                print("Found \(info.version) at \(path), but 18+ is required.")
+            }
+        }
+        print("Install with: brew install node (or nvm install 18)")
         exit(1)
     }
+    print("Using Node.js \(node.version) (\(node.path))")
 
     print("Amaranth Check Setup")
     print("====================")

@@ -53,6 +53,81 @@ func runShell(_ command: String) {
     task.waitUntilExit()
 }
 
+func getNodeVersionAt(_ path: String) -> (path: String, version: String, major: Int)? {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: path)
+    task.arguments = ["--version"]
+    let pipe = Pipe()
+    task.standardOutput = pipe
+    task.standardError = FileHandle.nullDevice
+    do {
+        try task.run()
+        task.waitUntilExit()
+        guard task.terminationStatus == 0 else { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        guard let ver = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !ver.isEmpty else { return nil }
+        let cleaned = ver.hasPrefix("v") ? String(ver.dropFirst()) : ver
+        guard let major = Int(cleaned.split(separator: ".").first ?? "") else { return nil }
+        return (path, ver, major)
+    } catch {
+        return nil
+    }
+}
+
+func findBestNode() -> (path: String, version: String, major: Int)? {
+    let fm = FileManager.default
+    let home = fm.homeDirectoryForCurrentUser.path
+    var candidates: [String] = [
+        "/opt/homebrew/bin/node",
+        "/usr/local/bin/node",
+    ]
+
+    // nvm: ~/.nvm/versions/node/v*/bin/node
+    let nvmDir = home + "/.nvm/versions/node"
+    if let dirs = try? fm.contentsOfDirectory(atPath: nvmDir) {
+        for d in dirs.sorted().reversed() {
+            candidates.append(nvmDir + "/\(d)/bin/node")
+        }
+    }
+
+    // mise: ~/.local/share/mise/installs/node/*/bin/node
+    let miseDir = home + "/.local/share/mise/installs/node"
+    if let dirs = try? fm.contentsOfDirectory(atPath: miseDir) {
+        for d in dirs.sorted().reversed() {
+            candidates.append(miseDir + "/\(d)/bin/node")
+        }
+    }
+
+    // fnm: ~/.local/share/fnm/node-versions/*/installation/bin/node
+    let fnmDir = home + "/.local/share/fnm/node-versions"
+    if let dirs = try? fm.contentsOfDirectory(atPath: fnmDir) {
+        for d in dirs.sorted().reversed() {
+            candidates.append(fnmDir + "/\(d)/installation/bin/node")
+        }
+    }
+
+    // 후보 중 18+ 인 것만 모아서 가장 높은 버전 선택
+    var best: (path: String, version: String, major: Int)?
+    for c in candidates {
+        guard fm.fileExists(atPath: c),
+              let info = getNodeVersionAt(c),
+              info.major >= 18 else { continue }
+        if best == nil || info.major > best!.major {
+            best = info
+        }
+    }
+    return best
+}
+
+func getNodeVersion() -> String? {
+    return findBestNode()?.version
+}
+
+func getNodePath() -> String? {
+    return findBestNode()?.path
+}
+
 func jsonString(_ s: String) -> String {
     let escaped = s
         .replacingOccurrences(of: "\\", with: "\\\\")
