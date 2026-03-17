@@ -7,6 +7,7 @@ class StatusBarController: NSObject {
     var config = loadConfig()
     let settingsController = SettingsWindowController()
     var lastNotifiedDone = false
+    var lastNotifiedLunch = false
     var isRefreshing = false
     var lastRefreshTime: Date?
 
@@ -47,8 +48,39 @@ class StatusBarController: NSObject {
         }
     }
 
+    // MARK: - Lunch time
+
+    var isLunchTime: Bool {
+        let cal = Calendar.current
+        let now = Date()
+        let nowMin = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
+        return nowMin >= 690 && nowMin < 780  // 11:30 ~ 13:00
+    }
+
+    func notifyLunchIfNeeded() {
+        guard config.notifyOnLunch, !lastNotifiedLunch else { return }
+        let cal = Calendar.current
+        let now = Date()
+        let nowMin = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
+        guard nowMin >= 690 && nowMin < 695 else { return }  // 11:30~11:34 사이에만
+        lastNotifiedLunch = true
+        sendNotification(config.lunchNotifyMessage)
+    }
+
+    // MARK: - Display
+
     func updateDisplay() {
         config = loadConfig()
+
+        // 날짜가 바뀌면 알림 플래그 리셋
+        let hour = Calendar.current.component(.hour, from: Date())
+        if hour < 7 {
+            lastNotifiedDone = false
+            lastNotifiedLunch = false
+        }
+
+        // 점심 알림 체크
+        notifyLunchIfNeeded()
 
         guard let cache = loadCache(),
               let status = calculateWorkStatus(cache: cache) else {
@@ -56,7 +88,6 @@ class StatusBarController: NSObject {
             statusItem.button?.image = NSImage(systemSymbolName: "clock", accessibilityDescription: nil)
             buildMenu(status: nil)
             // come이 없고 업무시간대(7~22시)면 출근 아직 안 잡힌 것 → 스크래핑
-            let hour = Calendar.current.component(.hour, from: Date())
             if hour >= 7 && hour < 22 {
                 safeRefresh()
             }
@@ -64,6 +95,13 @@ class StatusBarController: NSObject {
         }
 
         statusItem.button?.image = nil
+
+        // 점심시간 표시 모드
+        if config.showLunchStatus && isLunchTime && !status.isDone {
+            setStatusTitle("🍚 Lunch", color: .labelColor)
+            buildMenu(status: status)
+            return
+        }
 
         if status.leave != nil {
             setStatusTitle("\(config.emojiDone) \(config.labelDone)", color: doneColor())
@@ -217,15 +255,19 @@ class StatusBarController: NSObject {
         // osascript로 알림을 보내므로 별도 권한 불필요
     }
 
-    func notifyDoneIfNeeded() {
-        guard config.notifyOnDone, !lastNotifiedDone else { return }
-        lastNotifiedDone = true
-        let body = "퇴근 가능! \(config.emojiDone)"
-        let script = "display notification \"\(body)\" with title \"Amaranth Check\" sound name \"default\""
+    func sendNotification(_ body: String) {
+        let escaped = body.replacingOccurrences(of: "\"", with: "\\\"")
+        let script = "display notification \"\(escaped)\" with title \"Amaranth Check\" sound name \"default\""
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         task.arguments = ["-e", script]
         try? task.run()
+    }
+
+    func notifyDoneIfNeeded() {
+        guard config.notifyOnDone, !lastNotifiedDone else { return }
+        lastNotifiedDone = true
+        sendNotification("\(config.doneNotifyMessage) \(config.emojiDone)")
     }
 
     // MARK: - Actions

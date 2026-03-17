@@ -27,6 +27,10 @@ func loadConfig() -> AppConfig {
         colorDoneDark: json["colorDoneDark"] as? String ?? d.colorDoneDark,
         timeFormat: json["timeFormat"] as? String ?? d.timeFormat,
         notifyOnDone: json["notifyOnDone"] as? Bool ?? d.notifyOnDone,
+        doneNotifyMessage: json["doneNotifyMessage"] as? String ?? d.doneNotifyMessage,
+        notifyOnLunch: json["notifyOnLunch"] as? Bool ?? d.notifyOnLunch,
+        lunchNotifyMessage: json["lunchNotifyMessage"] as? String ?? d.lunchNotifyMessage,
+        showLunchStatus: json["showLunchStatus"] as? Bool ?? d.showLunchStatus,
         launchAtLogin: json["launchAtLogin"] as? Bool ?? d.launchAtLogin
     )
 }

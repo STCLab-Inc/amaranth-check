@@ -5,12 +5,14 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var config = loadConfig()
+    @State private var copied = false
     var onSave: ((AppConfig) -> Void)?
 
     var body: some View {
         TabView {
             accountTab.tabItem { Label("Account", systemImage: "person.circle") }
             appearanceTab.tabItem { Label("Appearance", systemImage: "paintbrush") }
+            notificationsTab.tabItem { Label("Notifications", systemImage: "bell") }
             generalTab.tabItem { Label("General", systemImage: "gear") }
         }
         .frame(width: 440, height: 480)
@@ -111,15 +113,49 @@ struct SettingsView: View {
         .frame(width: 60)
     }
 
-    // MARK: General Tab
+    // MARK: Notifications Tab
 
-    @State private var copied = false
+    var notificationsTab: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Done Notification").font(.headline)
+            Toggle("Notify when work is done", isOn: $config.notifyOnDone)
+            if config.notifyOnDone {
+                HStack {
+                    Text("Message").frame(width: 70, alignment: .trailing)
+                    TextField("퇴근 가능!", text: $config.doneNotifyMessage)
+                        .textFieldStyle(.roundedBorder).frame(width: 200)
+                }
+            }
+
+            Divider()
+
+            Text("Lunch Notification").font(.headline)
+            Toggle("Notify at lunch time (11:30)", isOn: $config.notifyOnLunch)
+            if config.notifyOnLunch {
+                HStack {
+                    Text("Message").frame(width: 70, alignment: .trailing)
+                    TextField("점심시간입니다 🍚", text: $config.lunchNotifyMessage)
+                        .textFieldStyle(.roundedBorder).frame(width: 200)
+                }
+            }
+
+            Divider()
+
+            Text("Lunch Display").font(.headline)
+            Toggle("Show lunch status in menu bar (11:30~13:00)", isOn: $config.showLunchStatus)
+            if config.showLunchStatus {
+                Text("During lunch, menu bar shows 🍚 Lunch instead of countdown")
+                    .font(.caption).foregroundColor(.secondary)
+            }
+        }.padding(20).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    // MARK: General Tab
 
     var generalTab: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("General").font(.headline)
             Toggle("Launch at Login", isOn: $config.launchAtLogin)
-            Toggle("Notify when done", isOn: $config.notifyOnDone)
 
             Divider()
 

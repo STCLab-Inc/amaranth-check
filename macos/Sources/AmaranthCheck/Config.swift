@@ -22,6 +22,10 @@ struct AppConfig: Codable, Equatable {
     var colorDoneDark: String
     var timeFormat: String   // "hm" = 8h32m, "m" = 512m, "colon" = 8:32
     var notifyOnDone: Bool
+    var doneNotifyMessage: String
+    var notifyOnLunch: Bool
+    var lunchNotifyMessage: String
+    var showLunchStatus: Bool
     var launchAtLogin: Bool
 
     static let `default` = AppConfig(
@@ -43,6 +47,10 @@ struct AppConfig: Codable, Equatable {
         colorDoneDark: "#30D158",
         timeFormat: "hm",
         notifyOnDone: true,
+        doneNotifyMessage: "퇴근 가능!",
+        notifyOnLunch: true,
+        lunchNotifyMessage: "점심시간입니다 🍚",
+        showLunchStatus: false,
         launchAtLogin: true
     )
 }
