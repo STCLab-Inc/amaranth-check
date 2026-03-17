@@ -52,24 +52,33 @@ func writeCheckScript() {
       }
     }
 
+    async function needsLogin(page) {
+      if (page.url().includes("login")) return true;
+      const loginForm = await page.locator("#reqLoginId").count().catch(() => 0);
+      return loginForm > 0;
+    }
+
+    async function doLogin(page) {
+      const compDisabled = await page.$eval("#reqCompCd", el => el.disabled).catch(() => false);
+      if (!compDisabled) await page.fill("#reqCompCd", COMPANY);
+      const idDisabled = await page.$eval("#reqLoginId", el => el.disabled).catch(() => false);
+      if (!idDisabled) await page.fill("#reqLoginId", USER_ID);
+      await page.click("button >> text=다음");
+      await page.waitForTimeout(2000);
+      await page.waitForSelector("#reqLoginPw", { state: "visible", timeout: 5000 });
+      await page.fill("#reqLoginPw", PASSWORD);
+      await page.click("button >> text=로그인");
+      await page.waitForTimeout(5000);
+    }
+
     async function tryLogin(context, page) {
       await page.goto("https://gw.stclab.com/", { waitUntil: "networkidle", timeout: 20000 });
 
-      if (page.url().includes("login")) {
-        const compDisabled = await page.$eval("#reqCompCd", el => el.disabled).catch(() => false);
-        if (!compDisabled) await page.fill("#reqCompCd", COMPANY);
-        const idDisabled = await page.$eval("#reqLoginId", el => el.disabled).catch(() => false);
-        if (!idDisabled) await page.fill("#reqLoginId", USER_ID);
-        await page.click("button >> text=다음");
-        await page.waitForTimeout(2000);
-        await page.waitForSelector("#reqLoginPw", { state: "visible", timeout: 5000 });
-        await page.fill("#reqLoginPw", PASSWORD);
-        await page.click("button >> text=로그인");
-        await page.waitForTimeout(5000);
+      if (await needsLogin(page)) {
+        await doLogin(page);
       }
 
-      // 로그인 후에도 여전히 login 페이지면 실패
-      if (page.url().includes("login")) {
+      if (await needsLogin(page)) {
         throw new Error("login_failed");
       }
     }
@@ -94,6 +103,26 @@ func writeCheckScript() {
       await page.goto("https://gw.stclab.com/#/HP/HPD0210/HPD0210", {
         waitUntil: "networkidle", timeout: 20000,
       });
+      await page.waitForTimeout(3000);
+
+      // 근태 페이지에서도 로그인이 필요할 수 있음 (SPA 내부 세션 만료)
+      if (await needsLogin(page)) {
+        await doLogin(page);
+        // 로그인 후 근태 페이지로 재이동
+        await page.goto("https://gw.stclab.com/#/HP/HPD0210/HPD0210", {
+          waitUntil: "networkidle", timeout: 20000,
+        });
+        await page.waitForTimeout(3000);
+        if (await needsLogin(page)) {
+          if (!retry) {
+            await context.close();
+            rmSync(USER_DATA_DIR, { recursive: true, force: true });
+            return main(true);
+          }
+          throw new Error("login_failed_on_attendance_page");
+        }
+      }
+
       await page.waitForSelector("table", { timeout: 15000 });
       await page.waitForTimeout(3000);
 
@@ -162,7 +191,7 @@ func writeCheckScript() {
       await context.close();
 
       const cache = {
-        date: new Date().toISOString().slice(0, 10),
+        date: (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); })(),
         come: result?.come || null,
         leave: result?.leave || null,
         leaveMinutes: leaveMinutes,
