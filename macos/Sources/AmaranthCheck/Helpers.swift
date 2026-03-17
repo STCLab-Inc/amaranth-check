@@ -43,13 +43,22 @@ func hexColor(_ hex: String) -> (r: Double, g: Double, b: Double) {
 
 // MARK: - Shell
 
-func runShell(_ command: String) {
+func runShell(_ command: String, timeout: TimeInterval = 0) {
     let task = Process()
     task.executableURL = URL(fileURLWithPath: "/bin/bash")
     task.arguments = ["-lc", command]
     task.standardOutput = FileHandle.nullDevice
     task.standardError = FileHandle.nullDevice
-    try? task.run()
+    do {
+        try task.run()
+    } catch { return }
+
+    if timeout > 0 {
+        DispatchQueue.global().async {
+            Thread.sleep(forTimeInterval: timeout)
+            if task.isRunning { task.terminate() }
+        }
+    }
     task.waitUntilExit()
 }
 

@@ -8,6 +8,7 @@ class StatusBarController: NSObject {
     let settingsController = SettingsWindowController()
     var lastNotifiedDone = false
     var isRefreshing = false
+    var lastRefreshTime: Date?
 
     override init() {
         super.init()
@@ -26,12 +27,23 @@ class StatusBarController: NSObject {
 
         // 10분마다 캐시 갱신
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
-            refreshCache { self?.updateDisplay() }
+            self?.safeRefresh()
         }
 
         // 초기 캐시 갱신
         if loadCache() == nil {
-            refreshCache { [weak self] in self?.updateDisplay() }
+            safeRefresh()
+        }
+    }
+
+    /// isRefreshing 가드를 통일한 단일 진입점
+    func safeRefresh() {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        refreshCache { [weak self] in
+            self?.isRefreshing = false
+            self?.lastRefreshTime = Date()
+            self?.updateDisplay()
         }
     }
 
@@ -45,12 +57,8 @@ class StatusBarController: NSObject {
             buildMenu(status: nil)
             // come이 없고 업무시간대(7~22시)면 출근 아직 안 잡힌 것 → 스크래핑
             let hour = Calendar.current.component(.hour, from: Date())
-            if hour >= 7 && hour < 22 && !isRefreshing {
-                isRefreshing = true
-                refreshCache { [weak self] in
-                    self?.isRefreshing = false
-                    self?.updateDisplay()
-                }
+            if hour >= 7 && hour < 22 {
+                safeRefresh()
             }
             return
         }
@@ -162,6 +170,19 @@ class StatusBarController: NSObject {
 
         menu.addItem(.separator())
 
+        // 마지막 갱신 시각
+        let refreshStr: String
+        if let t = lastRefreshTime {
+            let f = DateFormatter()
+            f.dateFormat = "HH:mm"
+            refreshStr = "Last refresh: \(f.string(from: t))"
+        } else {
+            refreshStr = "Last refresh: --:--"
+        }
+        let refreshInfo = NSMenuItem(title: refreshStr, action: nil, keyEquivalent: "")
+        refreshInfo.isEnabled = false
+        menu.addItem(refreshInfo)
+
         let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
@@ -215,7 +236,8 @@ class StatusBarController: NSObject {
 
     @objc func doRefresh() {
         setStatusTitle("...", color: .labelColor)
-        refreshCache { [weak self] in self?.updateDisplay() }
+        isRefreshing = false  // 수동 Refresh는 강제 실행
+        safeRefresh()
     }
 
     @objc func openSettings() {

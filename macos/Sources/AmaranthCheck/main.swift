@@ -127,10 +127,16 @@ if !args.contains("--foreground") {
     exit(0)
 }
 
+// App Nap 비활성화 — 타이머가 멈추지 않도록
+let activity = ProcessInfo.processInfo.beginActivity(
+    options: [.userInitiated, .idleSystemSleepDisabled],
+    reason: "Periodic attendance scraping"
+)
+
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 
-withExtendedLifetime(StatusBarController()) {
+withExtendedLifetime((StatusBarController(), activity)) {
     app.run()
 }
 

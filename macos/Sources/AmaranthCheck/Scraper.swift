@@ -191,7 +191,7 @@ func refreshCache(completion: (() -> Void)? = nil) {
             return
         }
         let binDir = (nodeBin as NSString).deletingLastPathComponent
-        runShell("export PATH=\"\(binDir):$PATH\" && cd \(AppPaths.configDir) && \(nodeBin) check.mjs 2>>\(AppPaths.configDir)/error.log")
+        runShell("export PATH=\"\(binDir):$PATH\" && cd \(AppPaths.configDir) && \(nodeBin) check.mjs 2>>\(AppPaths.configDir)/error.log", timeout: 90)
         DispatchQueue.main.async { completion?() }
     }
 }
