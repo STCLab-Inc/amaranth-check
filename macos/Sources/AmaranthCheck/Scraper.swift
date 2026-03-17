@@ -170,7 +170,7 @@ func writeCheckScript() {
       writeFileSync(join(homedir(), ".amaranth-check", "cache.json"), JSON.stringify(cache));
     }
 
-    main().catch(() => {});
+    main().catch(e => { console.error("[" + new Date().toISOString() + "] " + (e.message || e)); });
     """
 
     FileManager.default.createFile(atPath: AppPaths.checkScript, contents: script.data(using: .utf8))
