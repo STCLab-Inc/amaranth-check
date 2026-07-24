@@ -22,23 +22,33 @@ async function launchBrowser() {
   }
 }
 
+async function needsLogin(page) {
+  if (page.url().includes("login")) return true;
+  const loginForm = await page.locator("#reqLoginId").count().catch(() => 0);
+  return loginForm > 0;
+}
+
+async function doLogin(page) {
+  const compDisabled = await page.$eval("#reqCompCd", el => el.disabled).catch(() => false);
+  if (!compDisabled) await page.fill("#reqCompCd", COMPANY);
+  const idDisabled = await page.$eval("#reqLoginId", el => el.disabled).catch(() => false);
+  if (!idDisabled) await page.fill("#reqLoginId", USER_ID);
+  await page.click("button >> text=다음");
+  await page.waitForTimeout(2000);
+  await page.waitForSelector("#reqLoginPw", { state: "visible", timeout: 5000 });
+  await page.fill("#reqLoginPw", PASSWORD);
+  await page.click("button >> text=로그인");
+  await page.waitForTimeout(5000);
+}
+
 async function tryLogin(context, page) {
   await page.goto("https://gw.stclab.com/", { waitUntil: "networkidle", timeout: 20000 });
 
-  if (page.url().includes("login")) {
-    const compDisabled = await page.$eval("#reqCompCd", el => el.disabled).catch(() => false);
-    if (!compDisabled) await page.fill("#reqCompCd", COMPANY);
-    const idDisabled = await page.$eval("#reqLoginId", el => el.disabled).catch(() => false);
-    if (!idDisabled) await page.fill("#reqLoginId", USER_ID);
-    await page.click("button >> text=다음");
-    await page.waitForTimeout(2000);
-    await page.waitForSelector("#reqLoginPw", { state: "visible", timeout: 5000 });
-    await page.fill("#reqLoginPw", PASSWORD);
-    await page.click("button >> text=로그인");
-    await page.waitForTimeout(5000);
+  if (await needsLogin(page)) {
+    await doLogin(page);
   }
 
-  if (page.url().includes("login")) {
+  if (await needsLogin(page)) {
     throw new Error("login_failed");
   }
 }
@@ -53,6 +63,7 @@ async function main(retry = false) {
   } catch (e) {
     await context.close();
     if (!retry) {
+      // 세션 초기화 후 1회 재시도
       rmSync(USER_DATA_DIR, { recursive: true, force: true });
       return main(true);
     }
@@ -62,6 +73,26 @@ async function main(retry = false) {
   await page.goto("https://gw.stclab.com/#/HP/HPD0210/HPD0210", {
     waitUntil: "networkidle", timeout: 20000,
   });
+  await page.waitForTimeout(3000);
+
+  // 근태 페이지에서도 로그인이 필요할 수 있음 (SPA 내부 세션 만료)
+  if (await needsLogin(page)) {
+    await doLogin(page);
+    // 로그인 후 근태 페이지로 재이동
+    await page.goto("https://gw.stclab.com/#/HP/HPD0210/HPD0210", {
+      waitUntil: "networkidle", timeout: 20000,
+    });
+    await page.waitForTimeout(3000);
+    if (await needsLogin(page)) {
+      if (!retry) {
+        await context.close();
+        rmSync(USER_DATA_DIR, { recursive: true, force: true });
+        return main(true);
+      }
+      throw new Error("login_failed_on_attendance_page");
+    }
+  }
+
   await page.waitForSelector("table", { timeout: 15000 });
   await page.waitForTimeout(3000);
 
@@ -90,6 +121,7 @@ async function main(retry = false) {
     return null;
   });
 
+  // 시간연차인 경우 HPD0120에서 정확한 연차 시간 가져오기
   let leaveMinutes = null;
   if (result && result.attendType && result.attendType.includes("시간연차")) {
     await page.goto("https://gw.stclab.com/#/HP/HPD0120/HPD0120", {
@@ -99,6 +131,7 @@ async function main(retry = false) {
 
     leaveMinutes = await page.evaluate(() => {
       const grids = document.querySelectorAll("[id^=grid_]");
+      let total = 0;
       for (const g of grids) {
         if (!g.gridView) continue;
         try {
@@ -116,19 +149,19 @@ async function main(retry = false) {
               const sm = parseInt(r.startTm.substring(2, 4), 10);
               const eh = parseInt(r.endTm.substring(0, 2), 10);
               const em = parseInt(r.endTm.substring(2, 4), 10);
-              return (eh * 60 + em) - (sh * 60 + sm);
+              total += (eh * 60 + em) - (sh * 60 + sm);
             }
           }
         } catch {}
       }
-      return null;
+      return total > 0 ? total : null;
     });
   }
 
   await context.close();
 
   const cache = {
-    date: new Date().toISOString().slice(0, 10),
+    date: (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); })(),
     come: result?.come || null,
     leave: result?.leave || null,
     leaveMinutes: leaveMinutes,
@@ -136,4 +169,4 @@ async function main(retry = false) {
   writeFileSync(join(homedir(), ".amaranth-check", "cache.json"), JSON.stringify(cache));
 }
 
-main().catch(() => {});
+main().catch(e => { console.error("[" + new Date().toISOString() + "] " + (e.message || e)); });
