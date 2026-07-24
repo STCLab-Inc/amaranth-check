@@ -1,7 +1,16 @@
 use crate::config;
 use crate::AppState;
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
+
+// 중복 실행 가드 + 마지막 갱신 시각 (macOS safeRefresh 대응)
+static REFRESHING: AtomicBool = AtomicBool::new(false);
+static LAST_REFRESH: Mutex<Option<String>> = Mutex::new(None);
+
+pub fn last_refresh_time() -> Option<String> {
+    LAST_REFRESH.lock().unwrap().clone()
+}
 
 /// Generate check.mjs script with current config
 fn write_check_script(cfg: &config::AppConfig) {
@@ -49,6 +58,15 @@ async fn ensure_dependencies() {
 
 /// Run check.mjs and reload cache
 pub async fn refresh_cache(app: &tauri::AppHandle) {
+    // 이미 실행 중이면 건너뜀 (macOS safeRefresh 가드 대응)
+    if REFRESHING.swap(true, Ordering::Relaxed) {
+        return;
+    }
+    run_refresh(app).await;
+    REFRESHING.store(false, Ordering::Relaxed);
+}
+
+async fn run_refresh(app: &tauri::AppHandle) {
     let state = app.state::<Arc<AppState>>();
     let cfg = state.config.lock().unwrap().clone();
 
@@ -71,12 +89,18 @@ pub async fn refresh_cache(app: &tauri::AppHandle) {
 
     let mut cmd = tokio::process::Command::new("node");
     cmd.arg(&script).current_dir(&dir);
+    // 90초 타임아웃 시 프로세스가 남지 않도록
+    cmd.kill_on_drop(true);
 
     if let Some(f) = error_file {
         cmd.stderr(std::process::Stdio::from(f));
     }
 
-    let _ = cmd.output().await;
+    // 스크래핑이 멈춘 채로 유지되지 않도록 90초 제한 (macOS와 동일)
+    let _ = tokio::time::timeout(std::time::Duration::from_secs(90), cmd.output()).await;
+
+    *LAST_REFRESH.lock().unwrap() =
+        Some(chrono::Local::now().format("%H:%M").to_string());
 
     // Reload cache
     if let Some(cache) = config::load_cache() {

@@ -11,8 +11,8 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // Field IDs matching config keys
-const textFields = ['company', 'userId', 'password', 'labelLeft', 'labelDone'];
-const checkFields = ['showProgressBar', 'notifyOnDone', 'launchAtLogin'];
+const textFields = ['company', 'userId', 'password', 'labelLeft', 'labelDone', 'doneNotifyMessage', 'lunchNotifyMessage'];
+const checkFields = ['showProgressBar', 'notifyOnDone', 'notifyOnLunch', 'showLunchStatus', 'launchAtLogin'];
 const colorFields = [
   'colorEarly', 'colorMid', 'colorLate', 'colorDone',
   'colorEarlyDark', 'colorMidDark', 'colorLateDark', 'colorDoneDark'
