@@ -24,7 +24,27 @@ pub struct AppConfig {
     pub color_done_dark: String,
     pub time_format: String,
     pub notify_on_done: bool,
+    #[serde(default = "default_done_notify_message")]
+    pub done_notify_message: String,
+    #[serde(default = "default_true")]
+    pub notify_on_lunch: bool,
+    #[serde(default = "default_lunch_notify_message")]
+    pub lunch_notify_message: String,
+    #[serde(default)]
+    pub show_lunch_status: bool,
     pub launch_at_login: bool,
+}
+
+fn default_done_notify_message() -> String {
+    "퇴근 가능!".into()
+}
+
+fn default_lunch_notify_message() -> String {
+    "점심시간입니다 🍚".into()
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for AppConfig {
@@ -48,6 +68,10 @@ impl Default for AppConfig {
             color_done_dark: "#30D158".into(),
             time_format: "hm".into(),
             notify_on_done: true,
+            done_notify_message: default_done_notify_message(),
+            notify_on_lunch: true,
+            lunch_notify_message: default_lunch_notify_message(),
+            show_lunch_status: false,
             launch_at_login: true,
         }
     }

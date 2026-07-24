@@ -253,6 +253,16 @@ fn build_menu<M: tauri::Manager<tauri::Wry>>(
 
     builder = builder.separator();
 
+    // 마지막 갱신 시각
+    let refresh_str = match crate::scraper::last_refresh_time() {
+        Some(t) => format!("Last refresh: {}", t),
+        None => "Last refresh: --:--".to_string(),
+    };
+    let refresh_info = MenuItemBuilder::with_id("_lastrefresh", &refresh_str)
+        .enabled(false)
+        .build(manager)?;
+    builder = builder.item(&refresh_info);
+
     let settings_item = MenuItemBuilder::with_id("settings", "Settings...").build(manager)?;
     let quit_item = MenuItemBuilder::with_id("quit", "Quit").build(manager)?;
     builder = builder.item(&settings_item).item(&quit_item);
@@ -273,6 +283,15 @@ pub fn update_tray(app: &tauri::AppHandle) {
 
     let status = cache_guard.as_ref().and_then(|c| calculate_work_status(c));
 
+    // 날짜가 바뀌면 알림 플래그 리셋
+    if chrono::Local::now().hour() < 7 {
+        NOTIFIED_DONE.store(false, Ordering::Relaxed);
+        NOTIFIED_LUNCH.store(false, Ordering::Relaxed);
+    }
+
+    // 점심 알림 체크
+    notify_lunch_if_needed(&cfg);
+
     // Check if we should notify
     if let Some(ref s) = status {
         if s.is_done && cfg.notify_on_done {
@@ -280,7 +299,14 @@ pub fn update_tray(app: &tauri::AppHandle) {
         }
     }
 
-    let tooltip = if let Some(ref s) = status {
+    // 점심시간 표시 모드
+    let show_lunch = cfg.show_lunch_status
+        && is_lunch_time()
+        && status.as_ref().map(|s| !s.is_done).unwrap_or(false);
+
+    let tooltip = if show_lunch {
+        "🍚 Lunch".to_string()
+    } else if let Some(ref s) = status {
         if s.leave.is_some() {
             format!(
                 "{} {}\nIn: {}  Out: {}",
@@ -311,7 +337,9 @@ pub fn update_tray(app: &tauri::AppHandle) {
         cfg.label_no_data.clone()
     };
 
-    let title = if let Some(ref s) = status {
+    let title = if show_lunch {
+        "🍚 Lunch".to_string()
+    } else if let Some(ref s) = status {
         if s.leave.is_some() {
             format!("{} {}", cfg.emoji_done, cfg.label_done)
         } else if let Some(ot) = s.overtime {
@@ -360,28 +388,55 @@ pub fn should_auto_scrape(app: &tauri::AppHandle) -> bool {
     cache_guard.is_none()
 }
 
-// Notification (one-shot per session)
+// Notification (one-shot per day, flags reset before 7 AM)
 use std::sync::atomic::{AtomicBool, Ordering};
 static NOTIFIED_DONE: AtomicBool = AtomicBool::new(false);
+static NOTIFIED_LUNCH: AtomicBool = AtomicBool::new(false);
 
-fn notify_done_if_needed(app: &tauri::AppHandle, cfg: &config::AppConfig) {
+// 11:30 ~ 13:00
+fn is_lunch_time() -> bool {
+    let now = chrono::Local::now();
+    let now_min = now.hour() * 60 + now.minute();
+    (690..780).contains(&now_min)
+}
+
+fn notify_done_if_needed(_app: &tauri::AppHandle, cfg: &config::AppConfig) {
     if NOTIFIED_DONE.swap(true, Ordering::Relaxed) {
         return; // already notified
     }
 
-    let emoji = cfg.emoji_done.clone();
-    let _app = app.clone();
+    let body = format!("{} {}", cfg.done_notify_message, cfg.emoji_done);
     std::thread::spawn(move || {
-        send_notification(&emoji);
+        send_notification(&body);
+    });
+}
+
+fn notify_lunch_if_needed(cfg: &config::AppConfig) {
+    if !cfg.notify_on_lunch {
+        return;
+    }
+    // 11:30~11:34 사이에만
+    let now = chrono::Local::now();
+    let now_min = now.hour() * 60 + now.minute();
+    if !(690..695).contains(&now_min) {
+        return;
+    }
+    if NOTIFIED_LUNCH.swap(true, Ordering::Relaxed) {
+        return; // already notified
+    }
+
+    let body = cfg.lunch_notify_message.clone();
+    std::thread::spawn(move || {
+        send_notification(&body);
     });
 }
 
 #[cfg(target_os = "macos")]
-fn send_notification(emoji: &str) {
-    let body = format!("퇴근 가능! {}", emoji);
+fn send_notification(body: &str) {
+    let escaped = body.replace('"', "\\\"");
     let script = format!(
         "display notification \"{}\" with title \"Amaranth Check\" sound name \"default\"",
-        body
+        escaped
     );
     let _ = std::process::Command::new("/usr/bin/osascript")
         .args(["-e", &script])
@@ -389,9 +444,9 @@ fn send_notification(emoji: &str) {
 }
 
 #[cfg(target_os = "windows")]
-fn send_notification(emoji: &str) {
-    let body = format!("퇴근 가능! {}", emoji);
+fn send_notification(body: &str) {
     // PowerShell toast notification
+    let escaped = body.replace('\'', "''");
     let ps_script = format!(
         "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; \
          $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02); \
@@ -400,7 +455,7 @@ fn send_notification(emoji: &str) {
          $textNodes.Item(1).AppendChild($template.CreateTextNode('{}')) > $null; \
          $toast = [Windows.UI.Notifications.ToastNotification]::new($template); \
          [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Amaranth Check').Show($toast)",
-        body
+        escaped
     );
     let _ = std::process::Command::new("powershell")
         .args(["-Command", &ps_script])
@@ -408,9 +463,8 @@ fn send_notification(emoji: &str) {
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-fn send_notification(emoji: &str) {
-    let body = format!("퇴근 가능! {}", emoji);
+fn send_notification(body: &str) {
     let _ = std::process::Command::new("notify-send")
-        .args(["Amaranth Check", &body])
+        .args(["Amaranth Check", body])
         .spawn();
 }

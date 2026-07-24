@@ -13,6 +13,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="account">Account</button>
       <button class="tab" data-tab="appearance">Appearance</button>
+      <button class="tab" data-tab="notifications">Notifications</button>
       <button class="tab" data-tab="general">General</button>
     </div>
 
@@ -92,14 +93,46 @@
       </div>
     </div>
 
-    <!-- General Tab -->
-    <div class="tab-content" id="tab-general">
+    <!-- Notifications Tab -->
+    <div class="tab-content" id="tab-notifications">
+      <div class="section-title">Done Notification</div>
       <div class="field checkbox">
         <label>
           <input type="checkbox" id="notifyOnDone" />
-          Notify when done
+          Notify when work is done
         </label>
       </div>
+      <div class="field">
+        <label>Message</label>
+        <input type="text" id="doneNotifyMessage" placeholder="퇴근 가능!" />
+      </div>
+
+      <div class="section-title">Lunch Notification</div>
+      <div class="field checkbox">
+        <label>
+          <input type="checkbox" id="notifyOnLunch" />
+          Notify at lunch time (11:30)
+        </label>
+      </div>
+      <div class="field">
+        <label>Message</label>
+        <input type="text" id="lunchNotifyMessage" placeholder="점심시간입니다 🍚" />
+      </div>
+
+      <div class="section-title">Lunch Display</div>
+      <div class="field checkbox">
+        <label>
+          <input type="checkbox" id="showLunchStatus" />
+          Show lunch status in tray (11:30~13:00)
+        </label>
+      </div>
+      <div class="field">
+        <span class="hint">During lunch, tray shows 🍚 Lunch instead of countdown</span>
+      </div>
+    </div>
+
+    <!-- General Tab -->
+    <div class="tab-content" id="tab-general">
       <div class="field checkbox">
         <label>
           <input type="checkbox" id="launchAtLogin" />
