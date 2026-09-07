@@ -163,3 +163,17 @@ target/debug/amaranth-check-tauri.exe
 
 - **macOS**: push a `macos-v*` tag → builds, creates a GitHub Release, and updates the [homebrew-stclab](https://github.com/STCLab-Inc/homebrew-stclab) Cask.
 - **Windows**: push a `windows-v*` tag → builds and attaches `amaranth-check.exe` to a GitHub Release. Keep `windows/src-tauri/Cargo.toml` and `tauri.conf.json` versions in sync with the tag.
+
+## Approval automation (automation/) — experimental
+
+A Node CLI + MCP server that goes beyond attendance reading: fills **leave requests** and drafts (**saves, not submits**) **expense-approval proposals**. It logs in with the same `~/.amaranth-check/config.json` credentials; **a human always presses submit** (no submit path exists in code). Rationale: [docs/DESIGN.md](docs/DESIGN.md).
+
+```bash
+cd automation && npm install
+node cli.mjs status --json
+node cli.mjs leave --type 연차 --from 2026-09-18 --reason "personal" --complete --handoff
+node cli.mjs proposal --json spec.json
+node cli.mjs doctor
+```
+
+MCP for agents: `{"command":"node","args":["<repo>/automation/mcp-server.mjs"]}` — tools `amaranth_status`, `amaranth_leave_apply`, `amaranth_proposal_draft`, `amaranth_doctor`, `amaranth_close_browser`.

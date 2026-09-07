@@ -26,3 +26,14 @@ jobs:
       - name: Build Tauri
         working-directory: windows/src-tauri
         run: cargo build --release
+
+  automation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Unit tests (no browser)
+        working-directory: automation
+        run: npm ci --ignore-scripts && npm test

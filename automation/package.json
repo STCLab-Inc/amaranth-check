@@ -1,0 +1,22 @@
+{
+  "name": "amaranth-automation",
+  "version": "0.1.0",
+  "description": "Amaranth(gw.stclab.com) 근태·전자결재 자동화 CLI — 휴가 신청 입력, 품의 초안(보관)까지. 상신은 사람이 한다.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "amaranth": "./cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/",
+    "doctor": "node cli.mjs doctor"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "playwright": "^1.61.1",
+    "zod": "^4.5.4"
+  }
+}

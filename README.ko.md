@@ -163,3 +163,17 @@ target/debug/amaranth-check-tauri.exe
 
 - **macOS**: `macos-v*` 태그 푸시 → 빌드 후 GitHub Release 생성, [homebrew-stclab](https://github.com/STCLab-Inc/homebrew-stclab) Cask 자동 갱신.
 - **Windows**: `windows-v*` 태그 푸시 → 빌드 후 `amaranth-check.exe`를 GitHub Release에 첨부. `windows/src-tauri/Cargo.toml`·`tauri.conf.json` 버전을 태그와 맞출 것.
+
+## 결재 자동화 (automation/) — 실험적
+
+근태 읽기를 넘어 **휴가 신청 입력**과 **품의(기안서) 초안 보관**까지 자동화하는 Node CLI + MCP 서버입니다. 앱과 같은 `~/.amaranth-check/config.json` 자격증명으로 자동 로그인하며, **상신은 사람이 누릅니다** (코드에 상신 클릭 경로가 없음). 설계 근거: [docs/DESIGN.md](docs/DESIGN.md).
+
+```bash
+cd automation && npm install
+node cli.mjs status --json                                   # 오늘 출퇴근·연차 잔여·최근 상신문서
+node cli.mjs leave --type 연차 --from 2026-09-18 --reason "개인 사유" --complete --handoff   # 2단계까지 채우고 브라우저를 넘김 → 결재상신은 직접
+node cli.mjs proposal --json spec.json                        # 기안서-30만원 이상: 제목·본문·첨부 → 보관(임시저장)
+node cli.mjs doctor                                           # 화면 로케이터 드리프트 점검
+```
+
+MCP(에이전트용): `{"command":"node","args":["<repo>/automation/mcp-server.mjs"]}` — 도구 `amaranth_status`, `amaranth_leave_apply`, `amaranth_proposal_draft`, `amaranth_doctor`, `amaranth_close_browser`.
