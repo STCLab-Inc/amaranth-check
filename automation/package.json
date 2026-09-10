@@ -8,7 +8,7 @@
     "amaranth": "./cli.mjs"
   },
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test",
     "doctor": "node cli.mjs doctor"
   },
   "engines": {
