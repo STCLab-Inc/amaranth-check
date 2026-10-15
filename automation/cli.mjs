@@ -5,6 +5,7 @@ import { resolve } from "path";
 import { openSession, ensureLoggedIn } from "./lib/session.mjs";
 import { applyLeave, KINDS } from "./actions/leave.mjs";
 import { draftProposal } from "./actions/proposal.mjs";
+import { fillExpense, listUsage, EVIDENCE } from "./actions/expense.mjs";
 import { doctor } from "./actions/doctor.mjs";
 import { status } from "./actions/status.mjs";
 import { textToHtml, buildProposalBody } from "./lib/body.mjs";
@@ -14,11 +15,18 @@ const HELP = `사용법: amaranth <command> [옵션]
 
   login                         세션 확인/로그인만 수행 (config.json 자격증명 사용)
   leave   --from YYYY-MM-DD [--to YYYY-MM-DD] [--type ${KINDS.join("|")}] [--reason "..."]
+          [--start HH:MM --end HH:MM]  시간연차·시간연차(보상)일 때 필수 (24시, 하루 단위)
           [--complete]          '신청완료'로 2단계(상신정보)까지 진행. 결재상신은 사람이 누른다
           [--handoff]           브라우저를 띄운 채 사람에게 넘김 (headed 강제)
   proposal --title "..." (--body-file 본문.txt | --json spec.json) [--attach 파일 ...] [--no-save]
           기안서-30만원 이상 팝업에 제목·본문·첨부를 채우고 '보관'(임시저장). --no-save면 입력만
-  status  [--only attendance,leave,approvals]  오늘 출퇴근·연차 현황·최근 상신문서 상태 (읽기 전용)
+  expense --date YYYY-MM-DD --place "사용처" --amount 12000 --usage 103|"식대 - 기타"
+          [--time HH:MM] [--evidence ${EVIDENCE.join("|")}] [--memo "내용"] [--attendees "참석자"]
+          [--biz-no 123-45-67890] [--approval-no ...] [--attach 영수증.png ...]
+          업무경비청구서 지출정보등록 다이얼로그를 채우고 브라우저를 넘긴다. '확인'·'저장'·상신은 사람이 누른다
+          [--dry-run]           입력·검증 후 다이얼로그를 취소 (아무것도 남기지 않음, headless)
+  expense --list-usage          용도 코드 목록 (읽기 전용)
+  status  [--only attendance,leave,approvals,boxes]  오늘 출퇴근·연차 현황·최근 상신문서 상태·결재 문서함 건수 (읽기 전용)
   doctor                        로케이터 드리프트 점검 (자동 수정 없음)
 
 공통: --headed  브라우저 표시 / --json  결과를 JSON으로 / --screenshot 경로.png / --session-dir 경로
@@ -45,14 +53,16 @@ async function main() {
   const cmd = args._[0];
   log.json = !!args.json;
   if (!cmd || args.help) { console.log(HELP); return; }
-  const headed = !!args.headed || !!args.handoff;
+  // 지출결의는 저장을 사람이 하므로 브라우저를 넘겨야 의미가 있다 → dry-run·목록 조회가 아니면 headed + handoff
+  const expenseHandoff = cmd === "expense" && !args["dry-run"] && !args["list-usage"];
+  const headed = !!args.headed || !!args.handoff || expenseHandoff;
   const { context, page } = await openSession({ headed, sessionDir: args["session-dir"] });
   try {
     await ensureLoggedIn(page);
     if (cmd === "login") { log.result({ ok: true, url: page.url() }); return; }
     if (cmd === "leave") {
       const r = await applyLeave(page, {
-        kind: args.type || "연차", from: args.from, to: args.to || args.from, reason: args.reason || "",
+        kind: args.type || "연차", from: args.from, to: args.to || args.from, start: args.start, end: args.end, reason: args.reason || "",
         complete: !!args.complete, screenshot: args.screenshot, handoffMode: !!args.handoff,
       });
       log.result(r); return;
@@ -67,6 +77,19 @@ async function main() {
         html = textToHtml(readFileSync(args["body-file"], "utf8"));
       }
       const r = await draftProposal(page, { title, html, attachments: attachments.map((p) => resolve(p)), save: !args["no-save"], screenshot: args.screenshot });
+      log.result(r); return;
+    }
+    if (cmd === "expense") {
+      if (args["list-usage"]) {
+        const rows = await listUsage(page);
+        if (log.json) log.result({ usage: rows }); else console.log(rows.map((r) => `${r.code}  ${r.name}`).join("\n"));
+        return;
+      }
+      const r = await fillExpense(page, {
+        date: args.date, time: args.time, place: args.place, amount: args.amount, usage: args.usage,
+        evidence: args.evidence, memo: args.memo, attendees: args.attendees, bizNo: args["biz-no"], approvalNo: args["approval-no"],
+        attachments: (args.attach || []).map((p) => resolve(p)), dryRun: !!args["dry-run"], screenshot: args.screenshot, handoffMode: expenseHandoff,
+      });
       log.result(r); return;
     }
     if (cmd === "status") {

@@ -166,14 +166,17 @@ target/debug/amaranth-check-tauri.exe
 
 ## Approval automation (automation/) — experimental
 
-A Node CLI + MCP server that goes beyond attendance reading: fills **leave requests** and drafts (**saves, not submits**) **expense-approval proposals**. It logs in with the same `~/.amaranth-check/config.json` credentials; **a human always presses submit** (no submit path exists in code). Rationale: [docs/DESIGN.md](docs/DESIGN.md).
+A Node CLI + MCP server that goes beyond attendance reading: fills **leave / hourly-leave requests**, drafts (**saves, not submits**) **expense-approval proposals**, and fills **expense claims** (업무경비청구서) for a human to confirm and save. It logs in with the same `~/.amaranth-check/config.json` credentials; **a human always presses submit** (no submit path exists in code). Rationale: [docs/DESIGN.md](docs/DESIGN.md).
 
 ```bash
 cd automation && npm install
 node cli.mjs status --json
 node cli.mjs leave --type 연차 --from 2026-09-18 --reason "personal" --complete --handoff
+node cli.mjs leave --type 시간연차 --from 2026-10-20 --start 14:00 --end 16:30 --handoff
 node cli.mjs proposal --json spec.json
+node cli.mjs expense --list-usage
+node cli.mjs expense --date 2026-10-14 --place "restaurant" --amount 12000 --usage 103 --attach receipt.jpg   # add --dry-run to fill, verify, cancel
 node cli.mjs doctor
 ```
 
-MCP for agents: `{"command":"node","args":["<repo>/automation/mcp-server.mjs"]}` — tools `amaranth_status`, `amaranth_leave_apply`, `amaranth_proposal_draft`, `amaranth_doctor`, `amaranth_close_browser`.
+MCP for agents: `{"command":"node","args":["<repo>/automation/mcp-server.mjs"]}` — tools `amaranth_status`, `amaranth_leave_apply`, `amaranth_proposal_draft`, `amaranth_expense_usage`, `amaranth_expense_fill`, `amaranth_doctor`, `amaranth_close_browser`.

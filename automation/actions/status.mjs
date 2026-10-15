@@ -57,10 +57,38 @@ export async function recentApprovals(page) {
   });
 }
 
-export async function status(page, { include = ["attendance", "leave", "approvals"] } = {}) {
+// 결재 HOME 왼쪽 메뉴의 문서함별 건수 배지. 배지가 없으면 0건.
+export const BOXES = ["미결문서", "기결문서(진행)", "수신참조문서", "수신문서", "시행문서"];
+
+/** 결재 문서함 건수 (결재 HOME LNB 배지). 읽기 전용. */
+export async function approvalBoxes(page) {
+  await goto(page, ROUTES.eapHome);
+  await page.waitForTimeout(1500);
+  return page.evaluate((boxes) => {
+    const out = {};
+    const leaves = [...document.querySelectorAll("*")].filter((e) => e.children.length === 0);
+    for (const label of boxes) {
+      const el = leaves.find((e) => e.textContent.trim() === label && e.getBoundingClientRect().width > 0);
+      if (!el) { out[label] = null; continue; }
+      // 라벨과 같은 메뉴 항목(li) 안의 숫자만 있는 요소 = 배지
+      // li가 하위 메뉴까지 품으면 다른 문서함 배지를 잘못 읽는다 → 다른 라벨을 포함하지 않는 가장 가까운 조상까지만 올라간다
+      let item = el.parentElement;
+      for (let p = item; p && p.tagName !== "UL"; p = p.parentElement) {
+        if (boxes.some((b) => b !== label && p.textContent.includes(b))) break;
+        item = p;
+      }
+      const badge = [...item.querySelectorAll("*")].find((e) => e.children.length === 0 && e !== el && /^\d+$/.test(e.textContent.trim()));
+      out[label] = badge ? Number(badge.textContent.trim()) : 0;
+    }
+    return out;
+  }, BOXES);
+}
+
+export async function status(page, { include = ["attendance", "leave", "approvals", "boxes"] } = {}) {
   const r = {};
   if (include.includes("attendance")) r.attendance = await attendanceToday(page);
   if (include.includes("leave")) r.annualLeave = await annualLeave(page);
   if (include.includes("approvals")) r.recentApprovals = await recentApprovals(page);
+  if (include.includes("boxes")) r.approvalBoxes = await approvalBoxes(page);
   return r;
 }

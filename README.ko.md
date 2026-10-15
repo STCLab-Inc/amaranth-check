@@ -166,14 +166,19 @@ target/debug/amaranth-check-tauri.exe
 
 ## 결재 자동화 (automation/) — 실험적
 
-근태 읽기를 넘어 **휴가 신청 입력**과 **품의(기안서) 초안 보관**까지 자동화하는 Node CLI + MCP 서버입니다. 앱과 같은 `~/.amaranth-check/config.json` 자격증명으로 자동 로그인하며, **상신은 사람이 누릅니다** (코드에 상신 클릭 경로가 없음). 설계 근거: [docs/DESIGN.md](docs/DESIGN.md).
+근태 읽기를 넘어 **휴가·시간연차 신청 입력**, **품의(기안서) 초안 보관**, **지출결의(업무경비청구서) 입력**까지 자동화하는 Node CLI + MCP 서버입니다. 앱과 같은 `~/.amaranth-check/config.json` 자격증명으로 자동 로그인하며, **상신은 사람이 누릅니다** (코드에 상신 클릭 경로가 없음). 설계 근거: [docs/DESIGN.md](docs/DESIGN.md).
 
 ```bash
 cd automation && npm install
-node cli.mjs status --json                                   # 오늘 출퇴근·연차 잔여·최근 상신문서
+node cli.mjs status --json                                   # 오늘 출퇴근·연차 잔여·최근 상신문서·결재 문서함 건수
 node cli.mjs leave --type 연차 --from 2026-09-18 --reason "개인 사유" --complete --handoff   # 2단계까지 채우고 브라우저를 넘김 → 결재상신은 직접
+node cli.mjs leave --type 시간연차 --from 2026-10-20 --start 14:00 --end 16:30 --handoff     # 시간연차는 시작·종료 시각 필수
 node cli.mjs proposal --json spec.json                        # 기안서-30만원 이상: 제목·본문·첨부 → 보관(임시저장)
+node cli.mjs expense --list-usage                             # 지출결의 용도 코드 목록
+node cli.mjs expense --date 2026-10-14 --time 12:30 --place "식당" --amount 12000 --usage 103 --attach 영수증.jpg
+                                                              # 지출정보등록 다이얼로그를 채우고 브라우저를 넘김 → 확인·저장·상신은 직접
+                                                              # --dry-run: 입력·검증 후 취소(아무것도 남기지 않음)
 node cli.mjs doctor                                           # 화면 로케이터 드리프트 점검
 ```
 
-MCP(에이전트용): `{"command":"node","args":["<repo>/automation/mcp-server.mjs"]}` — 도구 `amaranth_status`, `amaranth_leave_apply`, `amaranth_proposal_draft`, `amaranth_doctor`, `amaranth_close_browser`.
+MCP(에이전트용): `{"command":"node","args":["<repo>/automation/mcp-server.mjs"]}` — 도구 `amaranth_status`, `amaranth_leave_apply`, `amaranth_proposal_draft`, `amaranth_expense_usage`, `amaranth_expense_fill`, `amaranth_doctor`, `amaranth_close_browser`.

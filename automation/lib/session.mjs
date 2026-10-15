@@ -66,11 +66,26 @@ export async function ensureLoggedIn(page, { retry = true } = {}) {
   }
 }
 
+/**
+ * 모듈 공지 팝업(ERPNoticePop)을 닫는다. 열려 있으면 그 아래 화면 클릭이 전부 가로막힌다(2026-10 실측).
+ * 팝업 안에 '삭제'·'수정' 버튼도 있으므로 정확히 '닫기'만 누른다.
+ */
+export async function dismissNotices(page) {
+  for (let i = 0; i < 3; i++) {
+    const pop = page.locator(SEL.common.noticePopup[0]).first();
+    if (!(await pop.count().catch(() => 0))) return;
+    const close = pop.locator(SEL.common.noticeClose[0]).last();
+    if (await close.count()) await close.click().catch(() => {}); else await page.keyboard.press("Escape");
+    await page.waitForTimeout(600);
+  }
+}
+
 /** SPA hash 라우트 이동. 내부 탭 상태가 남을 수 있어 networkidle + 짧은 대기. */
 export async function goto(page, route) {
   await page.goto(BASE_URL + route, { waitUntil: "networkidle", timeout: 30000 }).catch(() => {});
   await page.waitForTimeout(2000);
   if (await needsLogin(page)) { await login(page); await page.goto(BASE_URL + route, { waitUntil: "networkidle", timeout: 30000 }).catch(() => {}); await page.waitForTimeout(2000); }
+  await dismissNotices(page);
 }
 
 /** 사람에게 브라우저를 넘기고 창이 닫히거나 Enter가 눌릴 때까지 기다린다. */
